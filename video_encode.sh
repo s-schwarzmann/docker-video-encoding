@@ -15,27 +15,32 @@ target_seg_length=$5
 
 encoding_id=$steady_id\_$crf_val\_$min_dur\_$max_dur\_$target_seg_length
 
-#if [[ -d "/tmp/videos/results/$encoding_id" ]]; then
-#	exit
-#fi
-
-
 #new subfolder to store the segments
 sub_dir="subdir"
 mkdir $sub_dir
 
 #collect some video metrics which do not differ for the encodings
+#duration of complete video sequence
 dur=$(ffprobe -i $vid_id -show_entries format=duration -v quiet | grep duration | awk '{ print $1} ' | tr -d duration=)
+#frames per second
 fps=$(ffmpeg -i $vid_id 2>&1 | sed -n "s/.*, \(.*\) fp.*/\1/p")
 fps=$(python -c "from math import ceil; print ceil($fps)")
 resolution=$(ffmpeg -i $vid_id 2>&1 | grep -oP 'Stream .*, \K[0-9]+x[0-9]+')
+#bitrate of raw video
 tmp_bitrate=$(ffmpeg -i $vid_id 2>&1 | grep bitrate | sed 's/.*bitrate=\([0-9]\+\).*/\1/g')
 bitrate=$(echo $tmp_bitrate | awk {' print $6 '})
 
+#Segment size in frames (depends on duration and fps)
 key_int_max=$(echo $fps*$max_dur | bc)
 key_int_min=$(echo $fps*$min_dur | bc)
 
 
+#variable encoding
+#threads -1 makes the whole thing deterministic (each encoding with this parameters will result in the same encoded resulting video)
+#crf: constant rate factor, i.e. quality 
+#pass: denotes first and second pass
+#keyint: maximum gop size 
+#min-keyint: minimum gop size
 if [[ $target_seg_length == "var" ]]; then
 
 	#encode the video in case of variable
