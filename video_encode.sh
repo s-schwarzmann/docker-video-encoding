@@ -44,16 +44,14 @@ key_int_min=$(echo $fps*$min_dur | bc)
 if [[ $target_seg_length == "var" ]]; then
 
 	#encode the video in case of variable
-	ffmpeg -threads 1 -i $vid_id -preset veryslow -crf $crf_val -vcodec libx264 -pass 1 -f null - 2> /dev/null > /dev/null &&
-	ffmpeg -threads 1 -i $vid_id -preset veryslow -crf $crf_val -vcodec libx264 -x264-params keyint="$key_int_max":min-keyint="$key_int_min" -f stream_segment -segment_list $sub_dir/out.m3u8  $sub_dir/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
+	ffmpeg -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -x264-params keyint="$key_int_max":min-keyint="$key_int_min" -f stream_segment -segment_list $sub_dir/out.m3u8  $sub_dir/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
 	
 
 else
 	min_dur=$target_seg_length
 	max_dur=$target_seg_length
 	#encode the video in case of fixed length
-	ffmpeg -threads 1 -i $vid_id -preset veryslow -crf $crf_val -vcodec libx264 -pass 1 -f null - > /dev/null 2>/dev/null &&
-	ffmpeg -threads 1 -i $vid_id -preset veryslow -crf $crf_val -vcodec libx264 -f stream_segment -segment_time $target_seg_length -force_key_frames "expr:gte(t,n_forced*$target_seg_length)" -segment_list $sub_dir/out.m3u8  $sub_dir/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
+	ffmpeg -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -f stream_segment -segment_time $target_seg_length -force_key_frames "expr:gte(t,n_forced*$target_seg_length)" -segment_list $sub_dir/out.m3u8  $sub_dir/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
 	
 
 fi
@@ -72,10 +70,19 @@ std_br_clean=$(echo $temp_br | sed -n 1p | awk {' print $22 '})
 min_br_clean=$(echo $temp_br | sed -n 1p | awk {' print $26 '})
 max_br_clean=$(echo $temp_br | sed -n 1p | awk {' print $30 '})
 
+#compute SSIM 
 ff_output=$(ffmpeg -i $sub_dir/out.m3u8 -i $vid_id  -filter_complex "ssim" -f null - 2>&1 > /dev/null)
+
+ffmpeg -i $sub_dir/out.m3u8 -i $vid_id -lavfi "ssim=ssim.log;[0:v][1:v]psnr=psnr.log" -f null –
+
 all_val=$(echo $ff_output | awk '{print $((NF-1))}')
 pref="All:"
 avg_ssim=${all_val#$pref}
+
+all_val_psnr=$(echo $$ff_output | awk '{print $((NF-1))}')
+pref="average:"
+avg_psnr=${all_val_psnr$pref}
+
 
 
 tmp_seglength=$(python getSegmentLength.py $sub_dir/out.m3u8 $encoding_id)
@@ -107,4 +114,4 @@ python getFrames.py $sub_dir/out.m3u8 $encoding_id > /dev/null 2> /dev/null
 mkdir -p /tmp/videos/results/$encoding_id 2>/dev/null
 mv *.txt /tmp/videos/results/$encoding_id 2>/dev/null
 
-echo "$steady_id;$dur;$fps;$resolution;$bitrate;$crf_val;$target_seg_length;$min_dur;$max_dur;$num_segs;$avg_seglength;$std_seglength;$min_seglength;$max_seglength;$avg_seglength_clean;$std_seglength_clean;$min_seglength_clean;$max_seglength_clean;$total_segsize;$avg_segsize;$std_segsize;$min_segsize;$max_segsize;$avg_segsize_clean;$std_segsize_clean;$min_segsize_clean;$max_segsize_clean;$avg_br;$std_br;$min_br;$max_br;$avg_br_clean;$std_br_clean;$min_br_clean;$max_br_clean;$avg_ssim"
+echo "$steady_id;$dur;$fps;$resolution;$bitrate;$crf_val;$target_seg_length;$min_dur;$max_dur;$num_segs;$avg_seglength;$std_seglength;$min_seglength;$max_seglength;$avg_seglength_clean;$std_seglength_clean;$min_seglength_clean;$max_seglength_clean;$total_segsize;$avg_segsize;$std_segsize;$min_segsize;$max_segsize;$avg_segsize_clean;$std_segsize_clean;$min_segsize_clean;$max_segsize_clean;$avg_br;$std_br;$min_br;$max_br;$avg_br_clean;$std_br_clean;$min_br_clean;$max_br_clean;$avg_ssim;$avg_psnr"
