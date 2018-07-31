@@ -3,6 +3,7 @@ import sys
 import shutil
 import logging
 import random
+import json
 import time
 from os.path import join as pjoin
 
@@ -51,7 +52,7 @@ def get_and_lock_job(jobdir, rundir, vdir, wid):
 
 	log.debug("Waiting if someone else wants this job..")
 
-	time.sleep(1)
+	# time.sleep(1)
 
 	job_workers = [j.split(".")[0] for j in os.listdir(rundir) if job in j]
 
@@ -72,7 +73,7 @@ def get_and_lock_job(jobdir, rundir, vdir, wid):
 		return None
 
 
-def process_job(rundir, donedir, viddir, job, wid):
+def process_job(rundir, donedir, viddir, tmpdir, job, wid):
 	"""
 	Processes a job with the docker container.
 
@@ -80,7 +81,20 @@ def process_job(rundir, donedir, viddir, job, wid):
 
 	abs_job = pjoin(rundir, job)
 
-	log.info("Processing %s" % abs_job) 
+	log.info("Processing %s" % abs_job)
+
+	with open(abs_job) as f:
+		j = json.load(f)
+
+	log.debug("Job: %s" % j)
+
+	_docker_run(viddir, tmpdir, 
+		    j["video_id"], j["crf_value"], j["key_int_min"], j["key_int_max"], j["target_seq_length"])
+
+def _docker_run(viddir, tmpdir, video_id, crf_value, key_int_min, key_int_max, target_seq_length):
+
+	log.info("... docker run ...")
+
 
 if __name__ == "__main__":
 
@@ -93,6 +107,7 @@ if __name__ == "__main__":
 	parser.add_argument('-r', '--rundir', help="Running jobs folder.", default="samples/jobs_running/")
 	parser.add_argument('-d', '--donedir', help="Finished jobs folder.", default="samples/jobs_done/")
 	parser.add_argument('-v', '--viddir', help="Video folder.", default="samples/videos")
+	parser.add_argument('-t', '--tmpdir', help="Temporary folder.", default="samples/")
 	parser.add_argument('-i', '--id', help="Worker identifier.", default="w1")
 
 	args = parser.parse_args()
@@ -107,6 +122,6 @@ if __name__ == "__main__":
 	job = get_and_lock_job(args.jobdir, args.rundir, args.viddir, args.id)
 
 	if job:
-		process_job(args.rundir, args.donedir, args.viddir, job, args.id)
+		process_job(args.rundir, args.donedir, args.tmpdir, args.viddir, job, args.id)
 
 
