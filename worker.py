@@ -81,7 +81,7 @@ def get_and_lock_job(jobdir, vdir, wid):
 			return None
 
 
-def process_job(jobdir, tmpdir, viddir, container, job, wid):
+def process_job(jobdir, tmpdir, viddir, resultdir, container, job, wid):
 	"""
 	Processes a job with the docker container.
 
@@ -96,16 +96,23 @@ def process_job(jobdir, tmpdir, viddir, container, job, wid):
 
 	log.debug("Job: %s" % j)
 
-	_docker_run(tmpdir, viddir, container,
+	rdir = pjoin(resultdir, os.path.splitext(job)[0])
+	tdir = pjoin(tmpdir, os.path.splitext(job)[0])
+
+	os.makedirs(rdir, exist_ok=True)
+	os.makedirs(tdir, exist_ok=True)
+
+	_docker_run(tdir, viddir, rdir, container,
 		    j["video_id"], j["crf_value"], j["key_int_min"], j["key_int_max"], j["target_seq_length"])
 
-def _docker_run(tmpdir, viddir, container, video_id, crf_value, key_int_min, key_int_max, target_seq_length):
+def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seq_length):
 
 	log.info("... docker run ...")
 
 	cmd = ["docker", "run", "--rm", 
                "-v", "\"%s:/videos\"" % os.path.abspath(viddir), 
 	       "-v", "\"%s:/tmpdir\"" % os.path.abspath(tmpdir), 
+	       "-v", "\"%s:/results\"" % os.path.abspath(resultdir), 
                container, 
                video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seq_length)]
 
@@ -121,7 +128,8 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Encoding worker.")
 	parser.add_argument('-j', '--jobdir', help="Jobs folder.", default="samples/jobs/")
 	parser.add_argument('-v', '--viddir', help="Video folder.", default="samples/videos")
-	parser.add_argument('-t', '--tmpdir', help="Temporary folder.", default="samples/")
+	parser.add_argument('-t', '--tmpdir', help="Temporary folder.", default="samples/tmpdir")
+	parser.add_argument('-r', '--resultdir', help="Results folder.", default="samples/results")
 	parser.add_argument('-c', '--container', help="Container to use.", default="csieber/encoding:latest")
 	parser.add_argument('-i', '--id', help="Worker identifier.", default="w1")
 
@@ -137,6 +145,6 @@ if __name__ == "__main__":
 	job = get_and_lock_job(args.jobdir, args.viddir, args.id)
 
 	if job:
-		process_job(args.jobdir, args.tmpdir, args.viddir, args.container, job, args.id)
+		process_job(args.jobdir, args.tmpdir, args.viddir, args.resultdir, args.container, job, args.id)
 
 

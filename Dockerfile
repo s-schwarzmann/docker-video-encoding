@@ -11,7 +11,7 @@ RUN apt update && \
 
 ADD . /tmp/tools
 
-VOLUME ["/videos"]
+VOLUME ["/videos", "/results", "/tmpdir"]
 
 WORKDIR /tmp/tools
 
