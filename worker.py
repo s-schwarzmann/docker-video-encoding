@@ -3,11 +3,12 @@ import sys
 import shutil
 import logging
 import random
+import time
 from os.path import join as pjoin
 
 log = logging.getLogger(__name__)
 
-def get_job(jobdir, rundir, vdir, wid):
+def get_and_lock_job(jobdir, rundir, vdir, wid):
 	"""
 	Get the next job to process and locks it for the worker.
 
@@ -39,14 +40,47 @@ def get_job(jobdir, rundir, vdir, wid):
 
 	log.debug("Selected job: %s" % job) 
 
+	wjob = "%s.%s" % (wid, job)
+
 	src = pjoin(jobdir, job)
-	dst = pjoin(rundir, "%s.%s" % (wid, job))
+	dst = pjoin(rundir, wjob)
 
 	log.debug("MOVING: %s to %s" % (src, dst))
 
 	# shutil.move(src, dst)
 
-	
+	log.debug("Waiting if someone else wants this job..")
+
+	time.sleep(1)
+
+	job_workers = [j.split(".")[0] for j in os.listdir(rundir) if job in j]
+
+	log.warning("Conflicting workers for job %s! Workers: %s " % (job, job_workers))
+
+	me_idx = sorted(job_workers).index(wid)
+
+	if me_idx == 0:
+		log.info("I am index %d, taking the job!" % me_idx)
+
+		return wjob
+	else:
+		log.info("I am index %d, giving up on the job" % me_idx)
+
+		log.debug("Removing %s again." % dst)
+		os.remove(jf)
+
+		return None
+
+
+def process_job(rundir, donedir, viddir, job, wid):
+	"""
+	Processes a job with the docker container.
+
+	"""
+
+	abs_job = pjoin(rundir, job)
+
+	log.info("Processing %s" % abs_job) 
 
 if __name__ == "__main__":
 
@@ -70,5 +104,9 @@ if __name__ == "__main__":
 		log.error("Sanity check failed: A video contains '_' in the filename! This is not allowed!")
 		sys.exit(-1)
 
-	job = get_job(args.jobdir, args.rundir, args.viddir, args.id)
+	job = get_and_lock_job(args.jobdir, args.rundir, args.viddir, args.id)
+
+	if job:
+		process_job(args.rundir, args.donedir, args.viddir, job, args.id)
+
 
