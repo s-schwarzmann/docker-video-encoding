@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 #the command should look like the following
 #bash video_encode <video_id> <crf_value> <key_int_min> <key_int_max> <target_seg_length>
 
@@ -12,11 +14,16 @@ rm -r subdir 2> /dev/null
 #!!!!! SET BACK
 #vid_id=/tmp/videos/$1".y4m"
 steady_id=$1
-vid_id=/tmp/videos/$1.y4m
+vid_id=/videos/$1.y4m
 crf_val=$2
 min_dur=$3
 max_dur=$4 
 target_seg_length=$5
+
+if [ ! -f "$vid_id" ]; then
+    echo "Video file $vid_id not found!"
+    exit -1
+fi
 
 encoding_id=$steady_id\_$crf_val\_$min_dur\_$max_dur\_$target_seg_length
 

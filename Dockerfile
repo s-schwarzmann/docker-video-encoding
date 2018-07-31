@@ -17,5 +17,7 @@ WORKDIR /tmp/tools
 
 RUN chmod +x ./video_encode.sh
 
-CMD ["bash", "-c", "./video_encode.sh $VID $CRF $MINDUR $MAXDUR $SEGLEN"]
+ENTRYPOINT ["./video_encode.sh"]
+
+CMD ["./video_encode.sh"]
 
