@@ -1,6 +1,11 @@
 #the command should look like the following
 #bash video_encode <video_id> <crf_value> <key_int_min> <key_int_max> <target_seg_length>
 
+if [ "$#" -ne 5 ]; then
+    echo "Usage: video_encode.sh <video_id> <crf_value> <key_int_min> <key_int_max> <target_seg_length>"
+    exit -1
+fi
+
 #remove the subdir, if exists, to prevent troubles
 rm -r subdir 2> /dev/null
 
