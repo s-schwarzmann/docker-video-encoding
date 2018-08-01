@@ -6,11 +6,12 @@ import random
 import json
 import time
 import subprocess
+import re
 from os.path import join as pjoin
 
 log = logging.getLogger(__name__)
 
-def get_and_lock_job(jobdir, vdir, wid):
+def get_and_lock_job(jobdir, vdir, wid, dryrun=False):
 	"""
 	Get the next job to process and locks it for the worker.
 
@@ -56,7 +57,8 @@ def get_and_lock_job(jobdir, vdir, wid):
 
 	log.debug("Waiting if someone else wants this job..")
 
-	# time.sleep(1)
+	if not dryrun:
+		time.sleep(40)
 
 	job_workers = [j.split(".")[0] for j in os.listdir(pjoin(jobdir, "01_running")) if job in j]
 
@@ -114,7 +116,8 @@ def process_job(jobdir, tmpdir, viddir, resultdir, container, job, wid, dryrun=F
 	os.makedirs(tdir, exist_ok=True)
 
 	ret = _docker_run(tdir, viddir, rdir, container,
-	                  j["video_id"], j["crf_value"], j["key_int_min"], j["key_int_max"], j["target_seq_length"])
+	                  j["video_id"], j["crf_value"], j["key_int_min"], j["key_int_max"], j["target_seq_length"],
+			  dryrun=dryrun)
 
 	if ret:
 		dst = pjoin(jobdir, "02_done", job.split(".", 1)[1])
@@ -186,6 +189,8 @@ if __name__ == "__main__":
 	parser.add_argument('-t', '--tmpdir', help="Temporary folder.", default="samples/tmpdir")
 	parser.add_argument('-r', '--resultdir', help="Results folder.", default="samples/results")
 	parser.add_argument('-c', '--container', help="Container to use.", default="csieber/encoding:latest")
+	parser.add_argument('-o', '--one-job', help="Run only one job and quit.", action="store", default=False)
+	parser.add_argument('-d', '--dry-run', help="Dry-run. Do not run docker.", action="store", default=True)
 	parser.add_argument('-i', '--id', help="Worker identifier.", default="w1")
 
 	args = parser.parse_args()
@@ -197,6 +202,11 @@ if __name__ == "__main__":
 		log.error("Sanity check failed: A video contains '_' in the filename! This is not allowed!")
 		sys.exit(-1)
 
+	# Sanity check for worker ID
+	if not re.match('^[a-zA-Z0-9]+$', args.id):
+		log.error("Worker ID is only allowed to contain numbers and letters.") 
+		sys.exit(-1)
+
 	# Make sure the directories exist
 	for d in [args.tmpdir, args.viddir, args.resultdir]:
 		os.makedirs(d, exist_ok=True)
@@ -205,9 +215,33 @@ if __name__ == "__main__":
 	for d in ["00_waiting", "01_running", "02_done", "99_failed"]:
 		os.makedirs(pjoin(args.jobdir, d), exist_ok=True)
 
-	job = get_and_lock_job(args.jobdir, args.viddir, args.id)
+	if args.dry_run:
+		log.warning("This is a DRY-RUN. I am not running docker.")
 
-	if job:
-		process_job(args.jobdir, args.tmpdir, args.viddir, args.resultdir, args.container, job, args.id)
+	running = True
 
+	while running:
+		
+		try:
+			if not args.dry_run:
+				time.sleep(random.randint(3, 12))
+
+			job = get_and_lock_job(args.jobdir, args.viddir, args.id, 
+                                               dryrun=args.dry_run)
+	
+			if job:
+				process_job(args.jobdir, args.tmpdir, args.viddir, 
+                                            args.resultdir, args.container, job, 
+                                            args.id, dryrun=args.dryrun)
+
+		except KeyboardInterrupt:
+
+			log.warning("Received keyboard interrupt. Quitting after current job.")
+			running = False
+
+		if args.one_job or args.dry_run:
+			log.warning("One job only option is set. Exiting loop.")
+			running = False
+
+	log.info("Quitting worker %s." % args.id)
 
