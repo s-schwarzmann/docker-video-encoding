@@ -15,7 +15,8 @@ VOLUME ["/videos", "/results", "/tmpdir"]
 
 WORKDIR /tmp/tools
 
-RUN chmod +x ./video_encode.sh
+RUN chmod o+r+w /tmp/tools && \
+    chmod +x ./video_encode.sh
 
 ENTRYPOINT ["./video_encode.sh"]
 

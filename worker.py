@@ -37,26 +37,28 @@ def get_and_lock_job(jobdir, vdir, wid):
 
 	log.debug("Relevant jobs: %s" % rel_jobs)
 
+	if len(rel_jobs) == 0:
+		log.info("No relevant jobs available for me!")
+		return None
+
 	job = random.choice(rel_jobs)
 
 	log.debug("Selected job: %s" % job) 
 
 	wjob = "%s.%s" % (wid, job)
 
-	src = pjoin(jobdir, job)
+	src = pjoin(jobdir, "00_waiting", job)
 	dst = pjoin(jobdir, "01_running", wjob)
 
 	log.debug("MOVING: %s to %s" % (src, dst))
 
-	# shutil.move(src, dst)
+	shutil.move(src, dst)
 
 	log.debug("Waiting if someone else wants this job..")
 
 	# time.sleep(1)
 
 	job_workers = [j.split(".")[0] for j in os.listdir(pjoin(jobdir, "01_running")) if job in j]
-
-	print(job_workers)
 
 	assert(len(job_workers) > 0 and (wid in job_workers))
 
@@ -85,6 +87,13 @@ def process_job(jobdir, tmpdir, viddir, resultdir, container, job, wid):
 	"""
 	Processes a job with the docker container.
 
+	@param jobdir: Job directory
+	@param tmpdir: Temporary directory of the host to use
+	@param viddir: Directory with the videos
+	@param resultdir: Directory to put the results to
+	@param container: Container to use for encoding
+	@param job: The filename of the job to execute
+	@param wid: The ID of the worker
 	"""
 
 	abs_job = pjoin(jobdir, "01_running", job)
@@ -102,21 +111,45 @@ def process_job(jobdir, tmpdir, viddir, resultdir, container, job, wid):
 	os.makedirs(rdir, exist_ok=True)
 	os.makedirs(tdir, exist_ok=True)
 
-	_docker_run(tdir, viddir, rdir, container,
-		    j["video_id"], j["crf_value"], j["key_int_min"], j["key_int_max"], j["target_seq_length"])
+	ret = _docker_run(tdir, viddir, rdir, container,
+	                  j["video_id"], j["crf_value"], j["key_int_min"], j["key_int_max"], j["target_seq_length"])
+
+	if ret:
+		dst = pjoin(jobdir, "02_done", job.split(".", 1)[1])
+
+		log.debug("Moving %s to %s." % (abs_job, dst))
+
+		shutil.move(abs_job, dst)
+	else:
+		log.error("Encoding job failed !!")
+
+		dst = pjoin(jobdir, "09_failed", job)
+
+		log.debug("Moving %s to %s." % (abs_job, dst))
+
+		shutil.move(abs_job, dst)
+
+	return ret
 
 def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seq_length):
 
-	log.info("... docker run ...")
+	t = time.perf_counter()
 
 	cmd = ["docker", "run", "--rm", 
+	       "--user 1000:1000",
                "-v", "\"%s:/videos\"" % os.path.abspath(viddir), 
 	       "-v", "\"%s:/tmpdir\"" % os.path.abspath(tmpdir), 
 	       "-v", "\"%s:/results\"" % os.path.abspath(resultdir), 
-               container, 
+               container,
                video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seq_length)]
 
 	log.debug("RUN: %s" % " ".join(cmd))
+
+	dur = time.perf_counter() - t
+
+	log.info("Encoding duration: %.1fs" % dur)
+
+	return True
 
 
 if __name__ == "__main__":
