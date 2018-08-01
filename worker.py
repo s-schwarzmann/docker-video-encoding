@@ -174,6 +174,12 @@ def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_i
 
 	log.info("Encoding duration: %.1fs" % dur)
 
+	stats = {'encoding_duration': dur,
+		 'docker_cmd': " ".join(cmd)}
+
+	with open(pjoin(resultdir, "stats.json"), "w") as f:
+		json.dump(stats, f, indent=4, sort_keys=True)
+
 	return True
 
 
@@ -232,7 +238,7 @@ if __name__ == "__main__":
 			if job:
 				process_job(args.jobdir, args.tmpdir, args.viddir, 
                                             args.resultdir, args.container, job, 
-                                            args.id, dryrun=args.dryrun)
+                                            args.id, dryrun=args.dry_run)
 
 		except KeyboardInterrupt:
 
