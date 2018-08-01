@@ -83,7 +83,7 @@ def get_and_lock_job(jobdir, vdir, wid):
 			return None
 
 
-def process_job(jobdir, tmpdir, viddir, resultdir, container, job, wid):
+def process_job(jobdir, tmpdir, viddir, resultdir, container, job, wid, dryrun=False):
 	"""
 	Processes a job with the docker container.
 
@@ -96,6 +96,8 @@ def process_job(jobdir, tmpdir, viddir, resultdir, container, job, wid):
 	@param wid: The ID of the worker
 	"""
 
+	ts = int(time.time())
+
 	abs_job = pjoin(jobdir, "01_running", job)
 
 	log.info("Processing %s" % abs_job)
@@ -105,8 +107,8 @@ def process_job(jobdir, tmpdir, viddir, resultdir, container, job, wid):
 
 	log.debug("Job: %s" % j)
 
-	rdir = pjoin(resultdir, os.path.splitext(job)[0])
-	tdir = pjoin(tmpdir, os.path.splitext(job)[0])
+	rdir = pjoin(resultdir, "%s.%d" % (os.path.splitext(job)[0], ts))
+	tdir = pjoin(tmpdir, "%s.%d" % (os.path.splitext(job)[0], ts))
 
 	os.makedirs(rdir, exist_ok=True)
 	os.makedirs(tdir, exist_ok=True)
@@ -123,7 +125,7 @@ def process_job(jobdir, tmpdir, viddir, resultdir, container, job, wid):
 	else:
 		log.error("Encoding job failed !!")
 
-		dst = pjoin(jobdir, "09_failed", job)
+		dst = pjoin(jobdir, "99_failed", "%s.%d" % (job, ts))
 
 		log.debug("Moving %s to %s." % (abs_job, dst))
 
@@ -131,18 +133,38 @@ def process_job(jobdir, tmpdir, viddir, resultdir, container, job, wid):
 
 	return ret
 
-def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seq_length):
+def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seq_length, dryrun=False):
 
 	t = time.perf_counter()
 
 	cmd = ["docker", "run", "--rm", 
-	       "--user 1000:1000",
+	       "--user" , "1000:1000",
                "-v", "\"%s:/videos\"" % os.path.abspath(viddir), 
 	       "-v", "\"%s:/tmpdir\"" % os.path.abspath(tmpdir), 
 	       "-v", "\"%s:/results\"" % os.path.abspath(resultdir), 
                container,
                video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seq_length)]
 
+	log.debug("RUN: %s" % " ".join(cmd))
+
+	if not dryrun:
+
+		try:
+			with open(pjoin(resultdir, "docker_run_stdout.log"), "wt") as fout, \
+		             open(pjoin(resultdir, "docker_run_stderr.log"), "wt") as ferr:
+
+				ret = subprocess.check_call(cmd, stderr=ferr, stdout=fout)
+
+				print(ret)
+
+		except subprocess.CalledProcessError:
+			log.error("Docker run failed !!")
+			log.error("Check the logs in the resultdir for details.")
+			return False
+
+	else:
+		log.warning("Dryrun selected. Not starting docker container!")
+		
 	log.debug("RUN: %s" % " ".join(cmd))
 
 	dur = time.perf_counter() - t
@@ -174,6 +196,14 @@ if __name__ == "__main__":
 	if any(["_" in v for v in os.listdir(args.viddir)]):
 		log.error("Sanity check failed: A video contains '_' in the filename! This is not allowed!")
 		sys.exit(-1)
+
+	# Make sure the directories exist
+	for d in [args.tmpdir, args.viddir, args.resultdir]:
+		os.makedirs(d, exist_ok=True)
+
+	# Make sure job directories exist.
+	for d in ["00_waiting", "01_running", "02_done", "99_failed"]:
+		os.makedirs(pjoin(args.jobdir, d), exist_ok=True)
 
 	job = get_and_lock_job(args.jobdir, args.viddir, args.id)
 
