@@ -13,8 +13,8 @@ min_dur=$3
 max_dur=$4 
 target_seg_length=$5
 
-vid_id="bbb_first_min.y4m"
-steady_id="bbb_first_min"
+vid_id="big_buck_bunny_360p24.y4m"
+steady_id="big_buck_bunny_360p24"
 crf_val=41
 min_dur=0
 max_dur=0

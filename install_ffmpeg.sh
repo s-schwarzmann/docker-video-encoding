@@ -1,8 +1,12 @@
 #!/bin/bash
 
-wget https://github.com/Netflix/vmaf/archive/v1.3.5.tar.gz
-tar -xf v1.3.5.tar.gz
-cd vmaf-1.3.5
+#unzip ffmpeg folder 
+unzip ffmpeg.zip
+
+wget https://github.com/Netflix/vmaf/archive/v1.3.4.tar.gz
+tar -xf v1.3.4.tar.gz
+cd vmaf-1.3.4
+
 cd ptools; make; cd ../wrapper; make; cd ..;
 make install
 
