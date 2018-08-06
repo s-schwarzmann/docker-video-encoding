@@ -7,24 +7,29 @@ rm -r subdir 2> /dev/null
 #!!!!! SET BACK
 #vid_id=/tmp/videos/$1".y4m"
 steady_id=$1
-vid_id=/tmp/videos/$1.y4m
+#FIXME adapt path to videos!!
+#vid_id=/tmp/videos/$1.y4m
+vid_id=$1.y4m
 crf_val=$2
 min_dur=$3
 max_dur=$4 
 target_seg_length=$5
+codec=$6
 
-vid_id="big_buck_bunny_360p24.y4m"
-steady_id="big_buck_bunny_360p24"
-crf_val=41
-min_dur=0
-max_dur=0
-target_seg_length=4
+#vid_id="big_buck_bunny_360p24.y4m"
+#steady_id="big_buck_bunny_360p24"
+#crf_val=41
+#min_dur=0
+#max_dur=0
+#target_seg_length=4
 
-encoding_id=$steady_id\_$crf_val\_$min_dur\_$max_dur\_$target_seg_length
+encoding_id=$steady_id\_$codec\_$crf_val\_$min_dur\_$max_dur\_$target_seg_length
 
 #new subfolder to store the segments
 sub_dir="subdir"
 mkdir $sub_dir
+
+echo $vid_id
 
 #collect some video metrics which do not differ for the encodings
 #duration of complete video sequence
@@ -78,7 +83,7 @@ min_br_clean=$(echo $temp_br | sed -n 1p | awk {' print $26 '})
 max_br_clean=$(echo $temp_br | sed -n 1p | awk {' print $30 '})
 
 #compute SSIM, m_ssim, psnr, vmaf
-ffmpeg -i $sub_dir/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.log" -f null -
+ffmpeg -i $sub_dir/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.txt:psnr=1:ssim=1:ms_ssim=1" -f null -
 
 
 
@@ -125,7 +130,7 @@ total_segsize=$(echo $tmp_filesize | sed -n 1p | awk {' print $34 '})
 
 python getFrames.py $sub_dir/out.m3u8 $encoding_id > /dev/null 2> /dev/null
 
-#mkdir -p /tmp/videos/results/$encoding_id 2>/dev/null
-#mv *.txt /tmp/videos/results/$encoding_id 2>/dev/null
+mkdir -p /tmp/videos/results/$encoding_id 2>/dev/null
+mv *.txt /tmp/videos/results/$encoding_id 2>/dev/null
 
 echo "$steady_id;$dur;$fps;$resolution;$bitrate;$crf_val;$target_seg_length;$min_dur;$max_dur;$num_segs;$avg_seglength;$std_seglength;$min_seglength;$max_seglength;$avg_seglength_clean;$std_seglength_clean;$min_seglength_clean;$max_seglength_clean;$total_segsize;$avg_segsize;$std_segsize;$min_segsize;$max_segsize;$avg_segsize_clean;$std_segsize_clean;$min_segsize_clean;$max_segsize_clean;$avg_br;$std_br;$min_br;$max_br;$avg_br_clean;$std_br_clean;$min_br_clean;$max_br_clean"
