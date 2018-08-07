@@ -61,7 +61,7 @@ def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_i
 
     t = time.perf_counter()
 
-    docker_opts = ["--user" , "1000:1000",
+    docker_opts = ["--user" , "%d:%d" % (os.geteuid(), os.getegid()),
                    "-v", "%s:/videos" % os.path.abspath(viddir), 
                    "-v", "%s:/tmpdir" % os.path.abspath(tmpdir), 
                    "-v", "%s:/results" % os.path.abspath(resultdir)]
