@@ -44,8 +44,8 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
         os.makedirs(tdir, exist_ok=True)
     
         ret = _docker_run(tdir, viddir, rdir, container,
-                          j["video"], j["crf_value"], j["key_int_min"], 
-                          j["key_int_max"], j["target_seq_length"],
+                          j["video"], j["crf"], j["min_length"], 
+                          j["max_length"], j["target_seq_length"],
                           j["encoder"],
                   dryrun=dryrun, processor=processor)
     except:
