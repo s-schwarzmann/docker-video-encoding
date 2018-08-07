@@ -68,7 +68,7 @@ fi
 num_segs="$(ls $TMP/ | wc -l)" 
 num_segs=$(($num_segs-1))
 
-temp_br=$(python getBitrates.py $TMP $encoding_id $num_segs)
+temp_br=$(python scripts/getBitrates.py $TMP $encoding_id $num_segs)
 avg_br=$(echo $temp_br | sed -n 1p | awk {' print $2 '})
 std_br=$(echo $temp_br | sed -n 1p | awk {' print $6 '})
 min_br=$(echo $temp_br | sed -n 1p | awk {' print $10 '})
@@ -99,7 +99,7 @@ ffmpeg -i $TMP/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.txt:
 
 
 
-tmp_seglength=$(python getSegmentLength.py $TMP/out.m3u8 $encoding_id)
+tmp_seglength=$(python scripts/getSegmentLength.py $TMP/out.m3u8 $encoding_id)
 avg_seglength=$(echo $tmp_seglength | sed -n 1p | awk {' print $2 '})
 std_seglength=$(echo $tmp_seglength | sed -n 1p | awk {' print $6 '})
 min_seglength=$(echo $tmp_seglength | sed -n 1p | awk {' print $10 '})
@@ -110,7 +110,7 @@ min_seglength_clean=$(echo $tmp_seglength | sed -n 1p | awk {' print $26 '})
 max_seglength_clean=$(echo $tmp_seglength | sed -n 1p | awk {' print $30 '})
 
 
-tmp_filesize=$(python getFileSize.py $TMP $encoding_id $num_segs)
+tmp_filesize=$(python scripts/getFileSize.py $TMP $encoding_id $num_segs)
 avg_segsize=$(echo $tmp_filesize | sed -n 1p | awk {' print $2 '})
 std_segsize=$(echo $tmp_filesize | sed -n 1p | awk {' print $6 '})
 min_segsize=$(echo $tmp_filesize | sed -n 1p | awk {' print $10 '})
@@ -123,7 +123,7 @@ max_segsize_clean=$(echo $tmp_filesize | sed -n 1p | awk {' print $30 '})
 
 total_segsize=$(echo $tmp_filesize | sed -n 1p | awk {' print $34 '})
 
-python getFrames.py $TMP/out.m3u8 $encoding_id > /dev/null 2> /dev/null
+python scripts/getFrames.py $TMP/out.m3u8 $encoding_id > /dev/null 2> /dev/null
 
 mkdir -p /$RESULTS/$encoding_id 2>/dev/null
 mv *.txt /$RESULTS/$encoding_id 2>/dev/null
