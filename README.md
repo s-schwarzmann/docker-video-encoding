@@ -13,7 +13,13 @@ If the source video shall be splitted into segments of fixed duration, set maxdu
 
 ## QUICKSTART
 
-Example for fixed segment durations: 
+First download an example video:
+
+```
+wget https://service.inet.tu-berlin.de/owncloud/index.php/s/8NA7IFNKN9TgXVA/download -O samples/videos/big_buck_bunny_480p24_30s.y4m
+```
+
+Encode the example with fixed segment durations: 
 
 ```
 sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
@@ -21,6 +27,14 @@ sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
                      ls3info/encoding:latest big_buck_bunny_360p24_30s 41 0 0 4 x264
 
 ```
+
+The command line arguments are:
+
+```
+<video_id> <crf_value> <key_int_min> <key_int_max> <target_seg_length> <codec>
+```
+
+You can find the results in the *samples/results* folder.
 
 ## Local Testing
 

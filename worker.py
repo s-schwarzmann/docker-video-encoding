@@ -13,7 +13,8 @@ from dirjobs import DirJobs
 log = logging.getLogger(__name__)
 
 
-def process_job(job, tmpdir, viddir, resultdir, container, wid, dryrun=False):
+def process_job(job, tmpdir, viddir, resultdir, container, wid, 
+                dryrun=False, processor=None):
     """
     Processes a job with the docker container.
 
@@ -44,22 +45,28 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid, dryrun=False):
                       j["video_id"], j["crf_value"], j["key_int_min"], 
                       j["key_int_max"], j["target_seq_length"],
                       j["encoder"],
-              dryrun=dryrun)
+              dryrun=dryrun, processor=processor)
 
     return ret
 
 
-def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seq_length, encoder, dryrun=False):
+def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seq_length, encoder, 
+                dryrun=False, processor=None):
 
     t = time.perf_counter()
 
-    cmd = ["docker", "run", "--rm", 
-           "--user" , "1000:1000",
-               "-v", "\"%s:/videos\"" % os.path.abspath(viddir), 
-           "-v", "\"%s:/tmpdir\"" % os.path.abspath(tmpdir), 
-           "-v", "\"%s:/results\"" % os.path.abspath(resultdir), 
-           container,
-           video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seq_length), encoder]
+    docker_opts = ["--user" , "1000:1000",
+                   "-v", "\"%s:/videos\"" % os.path.abspath(viddir), 
+                   "-v", "\"%s:/tmpdir\"" % os.path.abspath(tmpdir), 
+                   "-v", "\"%s:/results\"" % os.path.abspath(resultdir)]
+    
+    if processor:
+        docker_opts += ["--cpuset-cpus=%s" % processor]
+                   
+    docker_opts += [container]
+
+    cmd = ["docker", "run", "--rm"] + docker_opts + \
+          [video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seq_length), encoder]
 
     log.debug("RUN: %s" % " ".join(cmd))
 
@@ -67,7 +74,7 @@ def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_i
 
         try:
             with open(pjoin(resultdir, "docker_run_stdout.log"), "wt") as fout, \
-                     open(pjoin(resultdir, "docker_run_stderr.log"), "wt") as ferr:
+                 open(pjoin(resultdir, "docker_run_stderr.log"), "wt") as ferr:
 
                 ret = subprocess.check_call(cmd, stderr=ferr, stdout=fout)
 
@@ -119,7 +126,9 @@ def worker_loop(args):
             if job:
                 ret = process_job(job, args.tmpdir, args.viddir, 
                                        args.resultdir, args.container, 
-                                       args.id, dryrun=args.dry_run)
+                                       args.id, 
+                                       processor=args.processor,
+                                       dryrun=args.dry_run)
                 
                 if ret:
                     job.failed()
@@ -154,6 +163,7 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--one-job', help="Run only one job and quit.", action="store", default=False)
     parser.add_argument('-d', '--dry-run', help="Dry-run. Do not run docker.", action="store", default=True)
     parser.add_argument('-i', '--id', help="Worker identifier.", default="w1")
+    parser.add_argument('-p', '--processor', help="Which CPU to use.", default=None)
 
     args = parser.parse_args()
 
