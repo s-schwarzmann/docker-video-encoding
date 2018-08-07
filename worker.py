@@ -124,9 +124,6 @@ def worker_loop(args):
     while running:
         
         try:
-            if not args.dry_run:
-                time.sleep(random.randint(3, 12))
-
             job = dj.next_and_lock()
     
             if job:
@@ -142,7 +139,9 @@ def worker_loop(args):
                     log.error("Encoding job failed !!")
                     job.failed()
             else:
-                log.debug("No job found. Pausing.")
+                pt = random.randint(30, 90)
+                log.debug("No job found. Pausing for %d seconds." % pt)
+                time.sleep(pt)
 
         except KeyboardInterrupt:
 
