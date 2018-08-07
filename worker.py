@@ -160,8 +160,8 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--tmpdir', help="Temporary folder.", default="samples/tmpdir")
     parser.add_argument('-r', '--resultdir', help="Results folder.", default="samples/results")
     parser.add_argument('-c', '--container', help="Container to use.", default="csieber/encoding:latest")
-    parser.add_argument('--one-job', help="Run only one job and quit.", action="store", default=False)
-    parser.add_argument('-d', '--dry-run', help="Dry-run. Do not run docker.", action="store", default=True)
+    parser.add_argument('--one-job', help="Run only one job and quit.", action="store_true")
+    parser.add_argument('--dry-run', help="Dry-run. Do not run docker.", action="store_true")
     parser.add_argument('-i', '--id', help="Worker identifier.", default="w1")
     parser.add_argument('-p', '--processor', help="Which CPU to use.", default=None)
 
