@@ -11,10 +11,15 @@ The following parameters can be specified:
 
 If the source video shall be splitted into segments of fixed duration, set maxdur=0 and mindur=0; If the source video shall be splitted into segments of variable duration, please set seglen="var".
 
+## QUICKSTART
+
 Example for fixed segment durations: 
 
 ```
-docker run -e VID="big_buck_bunny_360p24" -e CRF="41" -e MINDUR="0" -e MAXDUR="0" -e SEGLEN="4" -e ENCODER="x264" -i image1
+sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
+                     -v "$PWD"/samples/results/:/results \
+                     ls3info/encoding:latest big_buck_bunny_360p24 41 0 0 4 x264
+
 ```
 
 ## Local Testing
@@ -26,5 +31,14 @@ First build the image:
 You can start and enter the build image with:
 
 ```
-sudo docker run --rm -it --entrypoint=bash csieber/encoding:latest
+sudo docker run --rm -it --entrypoint=bash ls3info/encoding:latest
 ```
+
+If you want to test encoding, also add the videos/ and results/ volumes:
+
+```
+sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
+                     -v "$PWD"/samples/results/:/results \ 
+                     -it --entrypoint=bash ls3info/encoding:latest
+```
+
