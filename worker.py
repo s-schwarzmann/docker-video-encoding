@@ -54,8 +54,8 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
         log.critical("Failed to process job!")
         return False
 
-    log.debug("Deleting %s" % tdir)
-    shutil.rmtree(tdir)
+    #log.debug("Deleting %s" % tdir)
+    #shutil.rmtree(tdir)
 
     return ret
 
