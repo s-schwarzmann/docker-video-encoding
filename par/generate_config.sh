@@ -1,84 +1,35 @@
 #!/bin/bash
 
-#list all ids
-#declare -a ids=("9o9qSGZwMKE" \
-#"9wLV4cl7hCE" \
-#"big_buck_bunny_1080p24" \
-#"BreatheOut-StealingHeather-ForResearchOnly-420" \
-#"_bw06BVC3FM" \
-#"elephants_dream_720p24" \
-#"fuMtNy_iBiY" \
-#"IRfqvsgWBMw" \
-#"sintel" \
-#"sita_sings_the_blues_1080p24" \
-#"th1NTVIhUQU" \
-#"TXxFR6-L_Zk" \
-#"vkmpwS1aCc8" \
-#"vulcfGo_mw4" \
-#"AeLyrPgV0-Q" \
-#"P6kDZhLIkqw" \
-#"PoEIW1mjxFE" \
-#)
+mkdir jobs_1
+encoder="x264"
 
-declare -a ids=("9o9qSGZwMKE" "sintel" "9wLV4cl7hCE" "AeLyrPgV0-Q" "big_buck_bunny_1080p24")
-#declare -a ids=("9o9qSGZwMKE" "sintel")
+#list of videos
+declare -a ids=("bigbuckbunny480p24" "bigbuckbunny720p24")
+
+
 #list all crf values
-declare -a crfs=(17 \
-20 \
-23 \
-26 \
-29 \
-32 \
-35 \
-41)
+declare -a crfs=(16 \
+22 \
+28 \
+34)
 
-#min max combinations
-declare -a min_max=("0 15 var" \
-"0 100 var" \
-"0 10 var" \
-"0 5 var" \
-"1 15 var" \
-"1 10 var" \
-"1 5 var" \
-##tommy
-"2 5 var" \
-"2 6 var" \
-"2 7 var" \
-"2 8 var" \
-"2 9 var" \
-"2 10 var" \
-"3 5 var" \
-"3 6 var" \
-"3 7 var" \
-"3 8 var" \
-"3 9 var" \
-"3 10 var" \
-"4 5 var" \
-"4 6 var" \
-"4 7 var" \
-"4 8 var" \
-"4 9 var" \
-"4 10 var" \
-"5 6 var" \
-"5 7 var" \
-"5 8 var" \
-"5 9 var" \
-"5 10 var" \
-)
+declare -a max_durs=(4 \
+6 \
+8 \
+10)
 
 for i in "${ids[@]}"
 do
 	for c in "${crfs[@]}"
 	do
-		#fixed length
-		for target_lens in `seq 0.5 0.5 15.0`;
+		for md in "${max_durs[@]}"
 		do
-			echo $i $c 0 0  "$target_lens"  | sed s/\,/./g
-		done
-		#variable length 0 15
-		for mm in "${min_max[@]}"
-		do
-			echo $i $c "$mm" 
+			file_id="$i"_"$c"-"$md"-"$encoder"
+			echo $file_id
+			#touch jobs_1/"$file_id"
+			printf "{\"video\": \"$i\", \n \"crf\": $c, \n \"min_length\": 0, \n \"max_length\": $md, \n \"target_seg_length\": 0, \n \"encoder\": \"$encoder\"}"> jobs_1/"$file_id".txt 
+		
 		done
 	done
 done
+
