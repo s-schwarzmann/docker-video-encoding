@@ -21,13 +21,16 @@ RUN wget https://github.com/Netflix/vmaf/archive/v1.3.4.tar.gz && \
     make install && \
     cd ..; rm -rf vmaf-1.3.4/; rm -f v1.3.4.tar.gz
 
-ADD . /tmp/tools
+# Install ffmpeg
+RUN wget https://service.inet.tu-berlin.de/owncloud/index.php/s/XncfohkrXsxjG7h/download -O ffmpeg.zip && \
+    unzip ffmpeg.zip && \ 
+    rm ffmpeg.zip
 
-ADD ffmpeg.zip /tmp/tools
+ADD . /tmp/tools
 
 WORKDIR /tmp/tools
 
-RUN unzip ffmpeg.zip 
+ENV PATH="/tmp/tools/ffmpeg:${PATH}"
 
 RUN chmod o+r+w /tmp/tools && \
     chmod +x ./video_encode.sh
@@ -38,8 +41,11 @@ RUN chmod o+r+w /tmp/tools && \
 
 VOLUME ["/videos", "/results", "/tmpdir"]
 
-CMD ["bash", "-c", "PATH=$PATH:/tmp/tools/ffmpeg ./video_encode.sh $VID $CRF $MINDUR $MAXDUR $SEGLEN $ENCODER"]
+#CMD ["bash", "-c", "PATH=$PATH:/tmp/tools/ffmpeg ./video_encode.sh $VID $CRF $MINDUR $MAXDUR $SEGLEN $ENCODER"]
 
-#ENTRYPOINT ["./video_encode.sh"]
+ENV PATH="/tmp/tools/ffmpeg:${PATH}"
+
+ENTRYPOINT ["video_encode.sh"]
+
 #CMD ["./video_encode.sh"]
 
