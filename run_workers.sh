@@ -23,6 +23,7 @@ do
         WID="${HOST}x${c}"
         WORKER_CMD="python3 worker.py -v \"$VIDEOS\" -t \"$TMP\" -r \"$RESULTS\" -j \"$JOBS\" -c "$IMAGE" -i "$WID" -p $c"
 
-        echo screen -d -m -S "$WID" "bash -c \"$WORKER_CMD\""
+	echo "Running worker $WID"
+        echo screen -dm -S "$WID" bash -c "${WORKER_CMD}; exec bash"
 done
 
