@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+err_trap() {
+    echo "Error happened!. Quitting."
+    exit -1
+}
+
+trap 'err_trap' ERR
+
 if [ "$#" -ne 6 ]; then
     echo "Usage: video_encode.sh <video_id> <crf_value> <key_int_min> <key_int_max> <target_seg_length> <codec>"
     exit -1

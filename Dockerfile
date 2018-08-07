@@ -16,19 +16,20 @@ RUN apt update && \
 RUN wget https://github.com/Netflix/vmaf/archive/v1.3.4.tar.gz && \
     tar -xf v1.3.4.tar.gz && \
     cd vmaf-1.3.4 && \
-    cd ptools; make, cd .. && \
+    cd ptools; make; cd .. && \
     cd wrapper; make; cd .. && \
     make install && \
     cd ..; rm -rf vmaf-1.3.4/; rm -f v1.3.4.tar.gz
+
+# Add the git content
+ADD . /tmp/tools
+
+WORKDIR /tmp/tools
 
 # Install ffmpeg
 RUN wget https://service.inet.tu-berlin.de/owncloud/index.php/s/XncfohkrXsxjG7h/download -O ffmpeg.zip && \
     unzip ffmpeg.zip && \ 
     rm ffmpeg.zip
-
-ADD . /tmp/tools
-
-WORKDIR /tmp/tools
 
 ENV PATH="/tmp/tools/ffmpeg:${PATH}"
 

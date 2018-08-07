@@ -41,13 +41,15 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid, dryrun=False):
     os.makedirs(tdir, exist_ok=True)
 
     ret = _docker_run(tdir, viddir, rdir, container,
-                      j["video_id"], j["crf_value"], j["key_int_min"], j["key_int_max"], j["target_seq_length"],
+                      j["video_id"], j["crf_value"], j["key_int_min"], 
+                      j["key_int_max"], j["target_seq_length"],
+                      j["encoder"],
               dryrun=dryrun)
 
     return ret
 
 
-def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seq_length, dryrun=False):
+def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seq_length, encoder, dryrun=False):
 
     t = time.perf_counter()
 
@@ -57,7 +59,7 @@ def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_i
            "-v", "\"%s:/tmpdir\"" % os.path.abspath(tmpdir), 
            "-v", "\"%s:/results\"" % os.path.abspath(resultdir), 
            container,
-           video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seq_length)]
+           video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seq_length), encoder]
 
     log.debug("RUN: %s" % " ".join(cmd))
 
