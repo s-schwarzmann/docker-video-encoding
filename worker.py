@@ -7,6 +7,7 @@ import time
 import subprocess
 import re
 import traceback
+import shutil
 from functools import partial
 from os.path import join as pjoin
 from dirjobs import DirJobs
@@ -52,6 +53,9 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
         print(traceback.format_exc())
         log.critical("Failed to process job!")
         return False
+
+    log.debug("Deleting %s" % tdir)
+    shutil.rmtree(tdir)
 
     return ret
 
