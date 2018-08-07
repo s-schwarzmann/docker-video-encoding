@@ -1,33 +1,36 @@
-#the command should look like the following
-#bash video_encode <video_id> <crf_value> <key_int_min> <key_int_max> <target_seg_length>
+#!/usr/bin/env bash
 
-#remove the subdir, if exists, to prevent troubles
-rm -r subdir 2> /dev/null
+err_trap() {
+    echo "Error happened!. Quitting."
+    exit -1
+}
 
-#!!!!! SET BACK
-#vid_id=/tmp/videos/$1".y4m"
+trap 'err_trap' ERR
+
+if [ "$#" -ne 6 ]; then
+    echo "Usage: video_encode.sh <video_id> <crf_value> <key_int_min> <key_int_max> <target_seg_length> <codec>"
+    exit -1
+fi
+
 steady_id=$1
-#FIXME adapt path to videos!!
-#vid_id=/tmp/videos/$1.y4m
-vid_id=$1.y4m
+vid_id=/videos/$1.y4m
 crf_val=$2
 min_dur=$3
 max_dur=$4 
 target_seg_length=$5
 codec=$6
 
-#vid_id="big_buck_bunny_360p24.y4m"
-#steady_id="big_buck_bunny_360p24"
-#crf_val=41
-#min_dur=0
-#max_dur=0
-#target_seg_length=4
+if [ ! -f "$vid_id" ]; then
+    echo "Video file $vid_id not found!"
+    exit -1
+fi
 
 encoding_id=$steady_id\_$codec\_$crf_val\_$min_dur\_$max_dur\_$target_seg_length
 
-#new subfolder to store the segments
-sub_dir="subdir"
-mkdir $sub_dir
+# Store the segments in the temporary folder
+
+RESULTS="/results"
+TMP="/tmpdir"
 
 echo $vid_id
 
@@ -56,23 +59,23 @@ key_int_min=$(echo $fps*$min_dur | bc)
 if [[ $target_seg_length == "var" ]]; then
 
 	#encode the video in case of variable
-	ffmpeg -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -x264-params keyint="$key_int_max":min-keyint="$key_int_min" -f stream_segment -segment_list $sub_dir/out.m3u8  $sub_dir/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
+	ffmpeg -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -x264-params keyint="$key_int_max":min-keyint="$key_int_min" -f stream_segment -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
 	
 
 else
 	min_dur=$target_seg_length
 	max_dur=$target_seg_length
 	#encode the video in case of fixed length
-	ffmpeg -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -f stream_segment -segment_time $target_seg_length -force_key_frames "expr:gte(t,n_forced*$target_seg_length)" -segment_list $sub_dir/out.m3u8  $sub_dir/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
+	ffmpeg -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -f stream_segment -segment_time $target_seg_length -force_key_frames "expr:gte(t,n_forced*$target_seg_length)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
 	
 
 fi
 
 
-num_segs="$(ls $sub_dir/ | wc -l)" 
+num_segs="$(ls $TMP/ | wc -l)" 
 num_segs=$(($num_segs-1))
 
-temp_br=$(python getBitrates.py $sub_dir $encoding_id $num_segs)
+temp_br=$(python scripts/getBitrates.py $TMP $encoding_id $num_segs)
 avg_br=$(echo $temp_br | sed -n 1p | awk {' print $2 '})
 std_br=$(echo $temp_br | sed -n 1p | awk {' print $6 '})
 min_br=$(echo $temp_br | sed -n 1p | awk {' print $10 '})
@@ -83,7 +86,7 @@ min_br_clean=$(echo $temp_br | sed -n 1p | awk {' print $26 '})
 max_br_clean=$(echo $temp_br | sed -n 1p | awk {' print $30 '})
 
 #compute SSIM, m_ssim, psnr, vmaf
-ffmpeg -i $sub_dir/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.txt:psnr=1:ssim=1:ms_ssim=1" -f null -
+ffmpeg -i $TMP/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.txt:psnr=1:ssim=1:ms_ssim=1" -f null -
 
 
 
@@ -92,7 +95,6 @@ ffmpeg -i $sub_dir/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.
 #ffmpeg -i $sub_dir/out.m3u8 -i $vid_id -lavfi "ssim=ssim.log;[0:v][1:v]psnr=psnr.log;[0:v][1:v]libvmaf=libvmaf.log" -f null –
 #ffmpeg -i $sub_dir/out.m3u8 -i $vid_id -lavfi "libvmaf=libvmaf.log" -f null -
 #ffmpeg -i subdir/out.m3u8 -i bbb_first_min.y4m -lavfi libvmaf -f null -
-
 
 #all_val=$(echo $ff_output | awk '{print $((NF-1))}')
 #pref="All:"
@@ -104,7 +106,7 @@ ffmpeg -i $sub_dir/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.
 
 
 
-tmp_seglength=$(python getSegmentLength.py $sub_dir/out.m3u8 $encoding_id)
+tmp_seglength=$(python scripts/getSegmentLength.py $TMP/out.m3u8 $encoding_id)
 avg_seglength=$(echo $tmp_seglength | sed -n 1p | awk {' print $2 '})
 std_seglength=$(echo $tmp_seglength | sed -n 1p | awk {' print $6 '})
 min_seglength=$(echo $tmp_seglength | sed -n 1p | awk {' print $10 '})
@@ -115,7 +117,7 @@ min_seglength_clean=$(echo $tmp_seglength | sed -n 1p | awk {' print $26 '})
 max_seglength_clean=$(echo $tmp_seglength | sed -n 1p | awk {' print $30 '})
 
 
-tmp_filesize=$(python getFileSize.py $sub_dir $encoding_id $num_segs)
+tmp_filesize=$(python scripts/getFileSize.py $TMP $encoding_id $num_segs)
 avg_segsize=$(echo $tmp_filesize | sed -n 1p | awk {' print $2 '})
 std_segsize=$(echo $tmp_filesize | sed -n 1p | awk {' print $6 '})
 min_segsize=$(echo $tmp_filesize | sed -n 1p | awk {' print $10 '})
@@ -128,9 +130,9 @@ max_segsize_clean=$(echo $tmp_filesize | sed -n 1p | awk {' print $30 '})
 
 total_segsize=$(echo $tmp_filesize | sed -n 1p | awk {' print $34 '})
 
-python getFrames.py $sub_dir/out.m3u8 $encoding_id > /dev/null 2> /dev/null
+python scripts/getFrames.py $TMP/out.m3u8 $encoding_id > /dev/null 2> /dev/null
 
-mkdir -p /tmp/videos/results/$encoding_id 2>/dev/null
-mv *.txt /tmp/videos/results/$encoding_id 2>/dev/null
+mkdir -p /$RESULTS/$encoding_id 2>/dev/null
+mv *.txt /$RESULTS/$encoding_id 2>/dev/null
 
-echo "$steady_id;$dur;$fps;$resolution;$bitrate;$crf_val;$target_seg_length;$min_dur;$max_dur;$num_segs;$avg_seglength;$std_seglength;$min_seglength;$max_seglength;$avg_seglength_clean;$std_seglength_clean;$min_seglength_clean;$max_seglength_clean;$total_segsize;$avg_segsize;$std_segsize;$min_segsize;$max_segsize;$avg_segsize_clean;$std_segsize_clean;$min_segsize_clean;$max_segsize_clean;$avg_br;$std_br;$min_br;$max_br;$avg_br_clean;$std_br_clean;$min_br_clean;$max_br_clean"
+echo "$steady_id;$dur;$fps;$resolution;$bitrate;$crf_val;$target_seg_length;$min_dur;$max_dur;$num_segs;$avg_seglength;$std_seglength;$min_seglength;$max_seglength;$avg_seglength_clean;$std_seglength_clean;$min_seglength_clean;$max_seglength_clean;$total_segsize;$avg_segsize;$std_segsize;$min_segsize;$max_segsize;$avg_segsize_clean;$std_segsize_clean;$min_segsize_clean;$max_segsize_clean;$avg_br;$std_br;$min_br;$max_br;$avg_br_clean;$std_br_clean;$min_br_clean;$max_br_clean" > /$RESULTS/$encoding_id/summary.txt
