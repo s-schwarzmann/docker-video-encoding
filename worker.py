@@ -46,7 +46,7 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
     
         ret = _docker_run(tdir, viddir, rdir, container,
                           j["video"], j["crf"], j["min_length"], 
-                          j["max_length"], j["target_seq_length"],
+                          j["max_length"], j["target_seg_length"],
                           j["encoder"],
                   dryrun=dryrun, processor=processor)
     except:
@@ -60,7 +60,7 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
     return ret
 
 
-def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seq_length, encoder, 
+def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seg_length, encoder, 
                 dryrun=False, processor=None):
 
     t = time.perf_counter()
@@ -76,7 +76,7 @@ def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_i
     docker_opts += [container]
 
     cmd = ["docker", "run", "--rm"] + docker_opts + \
-          [video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seq_length), encoder]
+          [video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seg_length), encoder]
 
     log.debug("RUN: %s" % " ".join(cmd))
 
