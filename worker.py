@@ -88,7 +88,7 @@ def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_i
 
         except subprocess.CalledProcessError:
             log.error("Docker run failed !!")
-            log.error("Check the logs in the resultdir for details.")
+            log.error("Check the logs in %s for details." % resultdir)
             return False
 
     else:
