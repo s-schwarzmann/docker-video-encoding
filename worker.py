@@ -179,7 +179,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    log.info("Starting worker.")
+    log.info("Starting worker %s." % args.id)
 
     # Sanity check for video filename
     if any(["_" in v for v in os.listdir(args.viddir)]):
