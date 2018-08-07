@@ -13,7 +13,9 @@ If the source video shall be splitted into segments of fixed duration, set maxdu
 
 Example for fixed segment durations: 
 
-```docker run -e VID="big_buck_bunny_360p24" -e CRF="41" -e MINDUR="0" -e MAXDUR="0" -e SEGLEN="4" -e ENCODER="x264" -i image1```
+```
+docker run -e VID="big_buck_bunny_360p24" -e CRF="41" -e MINDUR="0" -e MAXDUR="0" -e SEGLEN="4" -e ENCODER="x264" -i image1
+```
 
 ## Local Testing
 
@@ -21,3 +23,8 @@ First build the image:
 
 	sudo docker build -t ls3info/encoding:latest .
 
+You can start and enter the build image with:
+
+```
+sudo docker run --rm -it --entrypoint=bash csieber/encoding:latest
+```

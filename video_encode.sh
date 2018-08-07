@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ "$#" -ne 5 ]; then
+if [ "$#" -ne 6 ]; then
     echo "Usage: video_encode.sh <video_id> <crf_value> <key_int_min> <key_int_max> <target_seg_length> <codec>"
     exit -1
 fi

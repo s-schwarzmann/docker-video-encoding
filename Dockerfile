@@ -32,20 +32,13 @@ WORKDIR /tmp/tools
 
 ENV PATH="/tmp/tools/ffmpeg:${PATH}"
 
+# Fix permissions
 RUN chmod o+r+w /tmp/tools && \
     chmod +x ./video_encode.sh
 
-#RUN chmod +x ./install_ffmpeg.sh
-
-#RUN bash install_ffmpeg.sh
-
 VOLUME ["/videos", "/results", "/tmpdir"]
-
-#CMD ["bash", "-c", "PATH=$PATH:/tmp/tools/ffmpeg ./video_encode.sh $VID $CRF $MINDUR $MAXDUR $SEGLEN $ENCODER"]
 
 ENV PATH="/tmp/tools/ffmpeg:${PATH}"
 
-ENTRYPOINT ["video_encode.sh"]
-
-#CMD ["./video_encode.sh"]
+ENTRYPOINT ["./video_encode.sh"]
 
