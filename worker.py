@@ -117,6 +117,8 @@ def worker_loop(args):
         return name.split('_')[0] in videos
     
     dj = DirJobs(args.jobdir, 
+                 worker_sync=not args.dry_run,
+                 sync_time=70,
                  job_filter=partial(video_filter, videos))
 
     running = True
