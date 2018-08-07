@@ -6,6 +6,7 @@ import json
 import time
 import subprocess
 import re
+import traceback
 from functools import partial
 from os.path import join as pjoin
 from dirjobs import DirJobs
@@ -48,6 +49,7 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
                           j["encoder"],
                   dryrun=dryrun, processor=processor)
     except:
+        print(traceback.format_exc())
         log.critical("Failed to process job!")
         return False
 
