@@ -137,7 +137,7 @@ def worker_loop(args):
                                        dryrun=args.dry_run)
                 
                 if ret:
-                    job.failed()
+                    job.done()
                 else:
                     log.error("Encoding job failed !!")
                     job.failed()
