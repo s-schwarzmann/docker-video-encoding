@@ -161,7 +161,7 @@ class DirJobs(object):
 
     def _job_worker_selection(self, job):
 
-        log.debug("Waiting if someone else wants this job..")
+        log.debug("Waiting %ds if someone else wants this job.." % self._sync_time)
 
         time.sleep(self._sync_time)
 
