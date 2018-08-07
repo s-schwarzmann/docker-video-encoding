@@ -30,22 +30,26 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
 
     log.info("Processing %s" % job)
 
-    with open(job.path()) as f:
-        j = json.load(f)
-
-    log.debug("Job: %s" % j)
-
-    rdir = pjoin(resultdir, "%s.%d" % (job.name_woext(), ts))
-    tdir = pjoin(tmpdir, "%s.%d" % (job.name_woext(), ts))
-
-    os.makedirs(rdir, exist_ok=True)
-    os.makedirs(tdir, exist_ok=True)
-
-    ret = _docker_run(tdir, viddir, rdir, container,
-                      j["video_id"], j["crf_value"], j["key_int_min"], 
-                      j["key_int_max"], j["target_seq_length"],
-                      j["encoder"],
-              dryrun=dryrun, processor=processor)
+    try: 
+        with open(job.path()) as f:
+            j = json.load(f)
+    
+        log.debug("Job: %s" % j)
+    
+        rdir = pjoin(resultdir, "%s.%d" % (job.name_woext(), ts))
+        tdir = pjoin(tmpdir, "%s.%d" % (job.name_woext(), ts))
+    
+        os.makedirs(rdir, exist_ok=True)
+        os.makedirs(tdir, exist_ok=True)
+    
+        ret = _docker_run(tdir, viddir, rdir, container,
+                          j["video_id"], j["crf_value"], j["key_int_min"], 
+                          j["key_int_max"], j["target_seq_length"],
+                          j["encoder"],
+                  dryrun=dryrun, processor=processor)
+    except:
+        log.critical("Failed to process job!")
+        return False
 
     return ret
 
