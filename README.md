@@ -18,7 +18,7 @@ Example for fixed segment durations:
 ```
 sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
                      -v "$PWD"/samples/results/:/results \
-                     ls3info/encoding:latest big_buck_bunny_360p24 41 0 0 4 x264
+                     ls3info/encoding:latest big_buck_bunny_360p24_30s 41 0 0 4 x264
 
 ```
 
