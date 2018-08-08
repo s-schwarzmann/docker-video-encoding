@@ -15,7 +15,7 @@ from dirjobs import DirJobs
 log = logging.getLogger(__name__)
 
 
-def process_job(job, tmpdir, viddir, resultdir, container, wid, 
+def process_job(job, tmpdir, viddir, resultdir, container, wid,
                 dryrun=False, processor=None):
     """
     Processes a job with the docker container.
@@ -32,20 +32,20 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
 
     log.info("Processing %s" % job)
 
-    try: 
+    try:
         with open(job.path()) as f:
             j = json.load(f)
-    
+
         log.debug("Job: %s" % j)
-    
+
         rdir = pjoin(resultdir, "%s.%d" % (job.name_woext(), ts))
         tdir = pjoin(tmpdir, "%s.%d" % (job.name_woext(), ts))
-    
+
         os.makedirs(rdir, exist_ok=True)
         os.makedirs(tdir, exist_ok=True)
-    
+
         ret = _docker_run(tdir, viddir, rdir, container,
-                          j["video"], j["crf"], j["min_length"], 
+                          j["video"], j["crf"], j["min_length"],
                           j["max_length"], j["target_seg_length"],
                           j["encoder"],
                   dryrun=dryrun, processor=processor)
@@ -54,25 +54,25 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
         log.critical("Failed to process job!")
         return False
 
-    #log.debug("Deleting %s" % tdir)
-    #shutil.rmtree(tdir)
+    log.debug("Deleting %s" % tdir)
+    shutil.rmtree(tdir)
 
     return ret
 
 
-def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seg_length, encoder, 
+def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seg_length, encoder,
                 dryrun=False, processor=None):
 
     t = time.perf_counter()
 
     docker_opts = ["--user" , "%d:%d" % (os.geteuid(), os.getegid()),
-                   "-v", "%s:/videos" % os.path.abspath(viddir), 
-                   "-v", "%s:/tmpdir" % os.path.abspath(tmpdir), 
+                   "-v", "%s:/videos" % os.path.abspath(viddir),
+                   "-v", "%s:/tmpdir" % os.path.abspath(tmpdir),
                    "-v", "%s:/results" % os.path.abspath(resultdir)]
-    
+
     if processor:
         docker_opts += ["--cpuset-cpus=%s" % processor]
-                   
+
     docker_opts += [container]
 
     cmd = ["docker", "run", "--rm"] + docker_opts + \
@@ -111,16 +111,16 @@ def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_i
     return True
 
 def worker_loop(args):
-    
+
     videos = [os.path.splitext(v)[0] for v in os.listdir(args.viddir)]
-    
+
     log.info("Available videos: %s" % videos)
-    
+
     # Select only jobs where we have the video locally available
     def video_filter(videos, path, name):
         return name.split('_')[0] in videos
-    
-    dj = DirJobs(args.jobdir, 
+
+    dj = DirJobs(args.jobdir,
                  wid=args.id,
                  worker_sync=not args.dry_run,
                  sync_time=70,
@@ -129,17 +129,17 @@ def worker_loop(args):
     running = True
 
     while running:
-        
+
         try:
             job = dj.next_and_lock()
-    
+
             if job:
-                ret = process_job(job, args.tmpdir, args.viddir, 
-                                       args.resultdir, args.container, 
-                                       args.id, 
+                ret = process_job(job, args.tmpdir, args.viddir,
+                                       args.resultdir, args.container,
+                                       args.id,
                                        processor=args.processor,
                                        dryrun=args.dry_run)
-                
+
                 if ret:
                     job.done()
                 else:
@@ -158,7 +158,7 @@ def worker_loop(args):
         if args.one_job or args.dry_run:
             log.warning("One job only option is set. Exiting loop.")
             running = False
-        
+
 
 if __name__ == "__main__":
 
@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     # Sanity check for worker ID
     if not re.match('^[a-zA-Z0-9]+$', args.id):
-        log.error("Worker ID is only allowed to contain numbers and letters.") 
+        log.error("Worker ID is only allowed to contain numbers and letters.")
         sys.exit(-1)
 
     # Make sure the directories exist
