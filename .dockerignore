@@ -1,2 +1,7 @@
-.git/
+.git*
 samples/
+README.md
+WEBDAV.md
+run_workers.sh
+worker.py
+dirjobs.py

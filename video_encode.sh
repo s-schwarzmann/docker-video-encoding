@@ -67,14 +67,14 @@ echo "### Encoding video (${SINCE}s since start) ###"
 if [[ $target_seg_length == "var" ]]; then
 
 	#encode the video in case of variable
-	ffmpeg -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -x264-params keyint="$key_int_max":min-keyint="$key_int_min" -f stream_segment -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
+	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -x264-params keyint="$key_int_max":min-keyint="$key_int_min" -f stream_segment -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2
 	
 
 else
 	min_dur=$target_seg_length
 	max_dur=$target_seg_length
 	#encode the video in case of fixed length
-	ffmpeg -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -f stream_segment -segment_time $target_seg_length -force_key_frames "expr:gte(t,n_forced*$target_seg_length)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
+	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -f stream_segment -segment_time $target_seg_length -force_key_frames "expr:gte(t,n_forced*$target_seg_length)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2
 	
 
 fi
@@ -100,7 +100,7 @@ SINCE=$(( $(date +%s) - $TS ))
 echo "### Computing quality metrics (${SINCE}s since start) ###"
 
 #compute SSIM, m_ssim, psnr, vmaf
-ffmpeg -i $TMP/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.txt:psnr=1:ssim=1:ms_ssim=1" -f null -
+ffmpeg -nostats -i $TMP/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.txt:psnr=1:ssim=1:ms_ssim=1" -f null -
 
 
 
