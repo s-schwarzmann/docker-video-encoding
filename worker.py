@@ -84,8 +84,8 @@ def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_i
     if not dryrun:
 
         try:
-            with open(pjoin(resultdir, "docker_run_stdout.log"), "wt") as fout, \
-                 open(pjoin(resultdir, "docker_run_stderr.log"), "wt") as ferr:
+            with open(pjoin(resultdir, "docker_run_stdout.txt"), "wt") as fout, \
+                 open(pjoin(resultdir, "docker_run_stderr.txt"), "wt") as ferr:
 
                 ret = subprocess.check_call(cmd, stderr=ferr, stdout=fout)
 
