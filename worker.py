@@ -38,8 +38,9 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
 
         log.debug("Job: %s" % j)
 
-        rdir = pjoin(resultdir, "%s.%d" % (job.name_woext(), ts))
-        tdir = pjoin(tmpdir, "%s.%d" % (job.name_woext(), ts))
+        d = "%s.%s.%d" % (wid, job.name_woext(), ts)
+        rdir = pjoin(resultdir, d)
+        tdir = pjoin(tmpdir, d)
 
         os.makedirs(rdir, exist_ok=True)
         os.makedirs(tdir, exist_ok=True)
