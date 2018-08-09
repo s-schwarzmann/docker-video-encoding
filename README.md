@@ -24,7 +24,7 @@ Encode the example with fixed segment durations:
 ```
 sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
                      -v "$PWD"/samples/results/:/results \
-                     ls3info/encoding:latest bigbuckbunny480p24x30s 41 0 0 4 x264
+                     fginet/encoding:latest bigbuckbunny480p24x30s 41 0 0 4 x264
 
 ```
 
@@ -60,12 +60,12 @@ The following options are used:
 
 First build the image:
 
-	sudo docker build -t ls3info/encoding:latest .
+	sudo docker build -t fginet/encoding:latest .
 
 You can start and enter the build image with:
 
 ```
-sudo docker run --rm -it --entrypoint=bash ls3info/encoding:latest
+sudo docker run --rm -it --entrypoint=bash fginet/encoding:latest
 ```
 
 If you want to test encoding, also add the videos/ and results/ volumes:
@@ -73,6 +73,6 @@ If you want to test encoding, also add the videos/ and results/ volumes:
 ```
 sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
                      -v "$PWD"/samples/results/:/results \ 
-                     -it --entrypoint=bash ls3info/encoding:latest
+                     -it --entrypoint=bash fginet/encoding:latest
 ```
 
