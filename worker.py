@@ -15,20 +15,21 @@ from dirjobs import DirJobs
 log = logging.getLogger(__name__)
 
 
-def process_job(job, tmpdir, viddir, resultdir, container, wid,
-                dryrun=False, processor=None):
+def process_job(job, wargs, dryrun=False):
     """
     Processes a job with the docker container.
 
     @param job: The job to process
-    @param tmpdir: Temporary directory of the host to use
-    @param viddir: Directory with the videos
-    @param resultdir: Directory to put the results to
-    @param container: Container to use for encoding
-    @param wid: The ID of the worker
+    @param wargs: Arguments for the worker (container)
     """
 
     ts = int(time.time())
+
+    stats = {'ts': ts,
+             'job': job.name(),
+             'job.path': job.path()}
+
+    stats.update(wargs)
 
     log.info("Processing %s" % job)
 
@@ -36,24 +37,37 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
         with open(job.path()) as f:
             j = json.load(f)
 
+        stats['job_dict'] = j
+
         log.debug("Job: %s" % j)
 
-        d = "%s.%s.%d" % (wid, job.name_woext(), ts)
-        rdir = pjoin(resultdir, d)
-        tdir = pjoin(tmpdir, d)
+        d = "%d.%s.%s" % (ts, wargs['id'], job.name_woext())
+        rdir = pjoin(wargs['resultdir'], d)
+        tdir = pjoin(wargs['tmpdir'], d)
 
         os.makedirs(rdir, exist_ok=True)
         os.makedirs(tdir, exist_ok=True)
 
-        ret = _docker_run(tdir, viddir, rdir, container,
+        t = time.perf_counter()
+
+        ret = _docker_run(stats, tdir, wargs['viddir'], rdir, wargs['container'],
                           j["video"], j["crf"], j["min_length"],
                           j["max_length"], j["target_seg_length"],
                           j["encoder"],
-                  dryrun=dryrun, processor=processor)
+                  dryrun=dryrun, processor=wargs['processor'])
+
+        dur = time.perf_counter() - t
+        stats['encoding_duration'] = dur
+
+        log.info("Encoding duration: %.1fs" % dur)
+
     except:
         print(traceback.format_exc())
         log.critical("Failed to process job!")
         return False
+
+    with open(pjoin(rdir, "stats.json"), "w") as f:
+        json.dump(stats, f, indent=4, sort_keys=True)
 
     log.debug("Deleting %s" % tdir)
     shutil.rmtree(tdir)
@@ -61,12 +75,12 @@ def process_job(job, tmpdir, viddir, resultdir, container, wid,
     return ret
 
 
-def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_int_min, key_int_max, target_seg_length, encoder,
+def _docker_run(stats, tmpdir, viddir, resultdir, container,
+                video_id, crf_value, key_int_min, key_int_max, target_seg_length, encoder,
                 dryrun=False, processor=None):
 
-    t = time.perf_counter()
-
-    docker_opts = ["--user" , "%d:%d" % (os.geteuid(), os.getegid()),
+    docker_opts = ["--rm",
+                   "--user" , "%d:%d" % (os.geteuid(), os.getegid()),
                    "-v", "%s:/videos" % os.path.abspath(viddir),
                    "-v", "%s:/tmpdir" % os.path.abspath(tmpdir),
                    "-v", "%s:/results" % os.path.abspath(resultdir)]
@@ -76,7 +90,7 @@ def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_i
 
     docker_opts += [container]
 
-    cmd = ["docker", "run", "--rm"] + docker_opts + \
+    cmd = ["docker", "run"] + docker_opts + \
           [video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seg_length), encoder]
 
     log.debug("RUN: %s" % " ".join(cmd))
@@ -99,15 +113,7 @@ def _docker_run(tmpdir, viddir, resultdir, container, video_id, crf_value, key_i
     else:
         log.warning("Dryrun selected. Not starting docker container!")
 
-    dur = time.perf_counter() - t
-
-    log.info("Encoding duration: %.1fs" % dur)
-
-    stats = {'encoding_duration': dur,
-             'docker_cmd': " ".join(cmd)}
-
-    with open(pjoin(resultdir, "stats.json"), "w") as f:
-        json.dump(stats, f, indent=4, sort_keys=True)
+    stats['docker_cmd'] = " ".join(cmd)
 
     return True
 
@@ -129,17 +135,17 @@ def worker_loop(args):
 
     running = True
 
+    # Worker arguments
+    fields = ['tmpdir', 'viddir', 'resultdir', 'container', 'id', 'processor']
+    wargs =  {k: getattr(args, k) for k in fields}
+
     while running:
 
         try:
             job = dj.next_and_lock()
 
             if job:
-                ret = process_job(job, args.tmpdir, args.viddir,
-                                       args.resultdir, args.container,
-                                       args.id,
-                                       processor=args.processor,
-                                       dryrun=args.dry_run)
+                ret = process_job(job, wargs, dryrun=args.dry_run)
 
                 if ret:
                     job.done()

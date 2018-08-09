@@ -16,7 +16,7 @@ If the source video shall be splitted into segments of fixed duration, set maxdu
 First download an example video:
 
 ```
-wget https://service.inet.tu-berlin.de/owncloud/index.php/s/8NA7IFNKN9TgXVA/download -O samples/videos/big_buck_bunny_480p24_30s.y4m
+wget https://service.inet.tu-berlin.de/owncloud/index.php/s/8NA7IFNKN9TgXVA/download -O samples/videos/bigbuckbunny480p24x30s.y4m
 ```
 
 Encode the example with fixed segment durations: 
@@ -24,7 +24,7 @@ Encode the example with fixed segment durations:
 ```
 sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
                      -v "$PWD"/samples/results/:/results \
-                     ls3info/encoding:latest big_buck_bunny_480p24_30s 41 0 0 4 x264
+                     ls3info/encoding:latest bigbuckbunny480p24x30s 41 0 0 4 x264
 
 ```
 
