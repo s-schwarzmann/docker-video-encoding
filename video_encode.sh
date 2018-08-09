@@ -67,14 +67,14 @@ echo "### Encoding video (${SINCE}s since start) ###"
 if [[ $target_seg_length == "var" ]]; then
 
 	#encode the video in case of variable
-	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -x264-params keyint="$key_int_max":min-keyint="$key_int_min" -f stream_segment -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2
+	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -x"$codec"-params keyint="$key_int_max":min-keyint="$key_int_min" -f stream_segment -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2
 	
 
 else
 	min_dur=$target_seg_length
 	max_dur=$target_seg_length
 	#encode the video in case of fixed length
-	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec libx264 -f stream_segment -segment_time $target_seg_length -force_key_frames "expr:gte(t,n_forced*$target_seg_length)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2
+	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -f stream_segment -segment_time $target_seg_length -force_key_frames "expr:gte(t,n_forced*$target_seg_length)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2
 	
 
 fi
