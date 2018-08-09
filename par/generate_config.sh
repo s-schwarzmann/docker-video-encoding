@@ -1,7 +1,7 @@
 #!/bin/bash
 
 mkdir jobs_1
-encoder="x264"
+
 
 #list of videos
 declare -a ids=("bigbuckbunny480p24" "bigbuckbunny720p24" "tos4k")
@@ -24,10 +24,13 @@ do
 	do
 		for md in "${max_durs[@]}"
 		do
-			file_id="$i"_"$c"-"$md"-"$encoder"
-			echo $file_id
-			#touch jobs_1/"$file_id"
+			encoder="x264"
+			file_id="$i"_"$c"-"$md"-"$encoder"-"var"
 			printf "{\"video\": \"$i\", \n \"crf\": $c, \n \"min_length\": 0, \n \"max_length\": $md, \n \"target_seg_length\": \"var\", \n \"encoder\": \"$encoder\"}"> jobs_1/"$file_id".txt 
+
+			encoder="x265"
+			file_id="$i"_"$c"-"$md"-"$encoder"-"var"
+			printf "{\"video\": \"$i\", \n \"crf\": $c, \n \"min_length\": 0, \n \"max_length\": $md, \n \"target_seg_length\": \"var\", \n \"encoder\": \"$encoder\"}"> jobs_1/"$file_id".txt 			
 		
 		done
 	done
