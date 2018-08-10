@@ -57,9 +57,9 @@ def process_job(job, wargs, dryrun=False):
                   dryrun=dryrun, processor=wargs['processor'])
 
         dur = time.perf_counter() - t
-        stats['encoding_duration'] = dur
+        stats['container_runtime'] = dur
 
-        log.info("Encoding duration: %.1fs" % dur)
+        log.info("Container runtime: %.1fs" % dur)
 
     except:
         print(traceback.format_exc())
