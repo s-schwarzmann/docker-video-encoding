@@ -54,7 +54,7 @@ python3 worker.py --dry-run --one-job
 The following options are used:
 
   * *--dry-run*: does not call the container, but prints the docker command.
-  * *--one-job*: quite after processing one job.
+  * *--one-job*: quit after processing one job.
 
 ## Local Testing
 

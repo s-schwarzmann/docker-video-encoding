@@ -119,19 +119,23 @@ def _docker_run(stats, tmpdir, viddir, resultdir, container,
 
 def worker_loop(args):
 
-    videos = [os.path.splitext(v)[0] for v in os.listdir(args.viddir)]
-
-    log.info("Available videos: %s" % videos)
+    videos = [os.path.splitext(v)[0] for v in os.listdir(args.viddir) if not v.startswith(".")]
+    log.info("Currently available videos: %s" % videos)
 
     # Select only jobs where we have the video locally available
-    def video_filter(videos, path, name):
-        return name.split('_')[0] in videos
+    def video_filter(viddir, path, name):
+
+        # Get video name from job name
+        vid = name.split('_')[0]
+
+        # Check if it exists
+        return os.path.exists(pjoin(viddir, vid + ".y4m"))
 
     dj = DirJobs(args.jobdir,
                  wid=args.id,
                  worker_sync=not args.dry_run,
                  sync_time=70,
-                 job_filter=partial(video_filter, videos))
+                 job_filter=partial(video_filter, args.viddir))
 
     running = True
 
