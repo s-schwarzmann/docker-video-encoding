@@ -22,25 +22,23 @@ RUN wget https://github.com/Netflix/vmaf/archive/v1.3.4.tar.gz && \
     cd ..; rm -rf vmaf-1.3.4/; rm -f v1.3.4.tar.gz
 
 # Install ffmpeg
-WORKDIR /tmp/tools
+WORKDIR /tools
 
 RUN wget https://service.inet.tu-berlin.de/owncloud/index.php/s/XncfohkrXsxjG7h/download -O ffmpeg.zip && \
     unzip ffmpeg.zip && \ 
     rm ffmpeg.zip
 
-ENV PATH="/tmp/tools/ffmpeg:${PATH}"
+ENV PATH="/tools/ffmpeg:${PATH}"
 
 # Add the (relevant) git content
-ADD scripts/ /tmp/tools/scripts
-ADD video_encode.sh /tmp/tools/
+COPY scripts/ /tools/scripts
+COPY video_encode.sh /tools/
 
 # Fix permissions
-RUN chmod o+r+w /tmp/tools && \
+RUN chmod o+r+w /tools && \
     chmod +x ./video_encode.sh
 
 VOLUME ["/videos", "/results", "/tmpdir"]
-
-ENV PATH="/tmp/tools/ffmpeg:${PATH}"
 
 ENTRYPOINT ["./video_encode.sh"]
 
