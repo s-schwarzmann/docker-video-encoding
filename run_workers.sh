@@ -5,7 +5,7 @@ CORES=`grep -c ^processor /proc/cpuinfo`
 
 VIDEOS="$HOME/videos/"
 TMP="$HOME/tmp/"
-IMAGE="ls3info/encoding:latest"
+IMAGE="fginet/encoding:latest"
 
 RESULTS="$HOME/WEBDAV/results/"
 JOBS="$HOME/WEBDAV/jobs/"
