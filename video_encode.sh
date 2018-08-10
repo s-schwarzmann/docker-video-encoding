@@ -25,7 +25,7 @@ if [ ! -f "$vid_id" ]; then
     exit -1
 fi
 
-TS=$(date +%s)
+TS_START=$(date +%s)
 
 encoding_id=$steady_id\_$codec\_$crf_val\_$min_dur\_$max_dur\_$target_seg_length
 
@@ -172,3 +172,6 @@ mkdir -p /$RESULTS/$encoding_id 2>/dev/null
 mv *.txt /$RESULTS/$encoding_id 2>/dev/null
 
 echo "$steady_id;$codec;$dur;$fps;$resolution;$bitrate;$crf_val;$target_seg_length;$min_dur;$max_dur;$num_segs;$avg_seglength;$std_seglength;$min_seglength;$max_seglength;$avg_seglength_clean;$std_seglength_clean;$min_seglength_clean;$max_seglength_clean;$total_segsize;$avg_segsize;$std_segsize;$min_segsize;$max_segsize;$avg_segsize_clean;$std_segsize_clean;$min_segsize_clean;$max_segsize_clean;$avg_br;$std_br;$min_br;$max_br;$avg_br_clean;$std_br_clean;$min_br_clean;$max_br_clean" > /$RESULTS/$encoding_id/summary.txt
+
+SINCE=$(( $(date +%s) - $TS_START ))
+echo "### Total run-time: ${SINCE}s ###"
