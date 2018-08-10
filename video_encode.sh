@@ -33,11 +33,12 @@ encoding_id=$steady_id\_$codec\_$crf_val\_$min_dur\_$max_dur\_$target_seg_length
 
 RESULTS="/results"
 TMP="/tmpdir"
+TIMINGS="timings.csv.txt"
 
 echo $vid_id
 
-SINCE=$(( $(date +%s) - $TS ))
-echo "### Collecting metrics (${SINCE}s since start) ###"
+echo "### Collecting general metrics ###"
+TS=$(date +%s)
 
 #collect some video metrics which do not differ for the encodings
 #duration of complete video sequence
@@ -56,7 +57,12 @@ key_int_min=$(echo $fps*$min_dur | bc)
 
 
 SINCE=$(( $(date +%s) - $TS ))
-echo "### Encoding video (${SINCE}s since start) ###"
+TS=$(date +%s)
+
+echo "step,seconds" > $TIMINGS
+echo "\"video_metrics\",${SINCE}" >> $TIMINGS
+
+echo "### Encoding video (prev. took ${SINCE}s) ###"
 
 #variable encoding
 #threads -1 makes the whole thing deterministic (each encoding with this parameters will result in the same encoded resulting video)
@@ -80,7 +86,10 @@ else
 fi
 
 SINCE=$(( $(date +%s) - $TS ))
-echo "### Analyzing encoded video (${SINCE}s since start) ###"
+TS=$(date +%s)
+echo "\"encoding\",${SINCE}" >> $TIMINGS
+
+echo "### Analyzing encoded video (prev. took ${SINCE}s) ###"
 
 num_segs="$(ls $TMP/ | wc -l)" 
 num_segs=$(($num_segs-1))
@@ -97,7 +106,10 @@ max_br_clean=$(echo $temp_br | sed -n 1p | awk {' print $30 '})
 
 
 SINCE=$(( $(date +%s) - $TS ))
-echo "### Computing quality metrics (${SINCE}s since start) ###"
+TS=$(date +%s)
+echo "\"getBitrates\",${SINCE}" >> $TIMINGS
+
+echo "### Computing quality metrics (prev. took ${SINCE}s) ###"
 
 #compute SSIM, m_ssim, psnr, vmaf
 ffmpeg -nostats -i $TMP/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.txt:psnr=1:ssim=1:ms_ssim=1" -f null -
@@ -120,7 +132,10 @@ ffmpeg -nostats -i $TMP/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_met
 
 
 SINCE=$(( $(date +%s) - $TS ))
-echo "### Getting segment length, file sizes, etc. (${SINCE}s since start) ###"
+TS=$(date +%s)
+echo "\"quality_metrics\",${SINCE}" >> $TIMINGS
+
+echo "### Getting segment length, file sizes, etc. (prev. took ${SINCE}s) ###"
 
 tmp_seglength=$(python scripts/getSegmentLength.py $TMP/out.m3u8 $encoding_id)
 avg_seglength=$(echo $tmp_seglength | sed -n 1p | awk {' print $2 '})
@@ -149,7 +164,9 @@ total_segsize=$(echo $tmp_filesize | sed -n 1p | awk {' print $34 '})
 python scripts/getFrames.py $TMP/out.m3u8 $encoding_id > /dev/null 2> /dev/null
 
 SINCE=$(( $(date +%s) - $TS ))
-echo "### Finishing up (${SINCE}s since start) ###"
+echo "\"length_sizes_frames\",${SINCE}" >> $TIMINGS
+
+echo "### Finishing up (prev. took ${SINCE}s) ###"
 
 mkdir -p /$RESULTS/$encoding_id 2>/dev/null
 mv *.txt /$RESULTS/$encoding_id 2>/dev/null
