@@ -115,22 +115,6 @@ echo "### Computing quality metrics (prev. took ${SINCE}s) ###"
 ffmpeg -nostats -i $TMP/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.txt:psnr=1:ssim=1:ms_ssim=1" -f null -
 
 
-
-#ff_output=$(ffmpeg -i $sub_dir/out.m3u8 -i $vid_id  -filter_complex "ssim" -f null - 2>&1 > /dev/null)
-
-#ffmpeg -i $sub_dir/out.m3u8 -i $vid_id -lavfi "ssim=ssim.log;[0:v][1:v]psnr=psnr.log;[0:v][1:v]libvmaf=libvmaf.log" -f null –
-#ffmpeg -i $sub_dir/out.m3u8 -i $vid_id -lavfi "libvmaf=libvmaf.log" -f null -
-#ffmpeg -i subdir/out.m3u8 -i bbb_first_min.y4m -lavfi libvmaf -f null -
-
-#all_val=$(echo $ff_output | awk '{print $((NF-1))}')
-#pref="All:"
-#avg_ssim=${all_val#$pref}
-
-#all_val_psnr=$(echo $$ff_output | awk '{print $((NF-1))}')
-#pref="average:"
-#avg_psnr=${all_val_psnr$pref}
-
-
 SINCE=$(( $(date +%s) - $TS ))
 TS=$(date +%s)
 echo "\"quality_metrics\",${SINCE}" >> $TIMINGS
