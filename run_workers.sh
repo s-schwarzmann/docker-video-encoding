@@ -5,7 +5,7 @@ CORES=`grep -c ^processor /proc/cpuinfo`
 
 VIDEOS="$HOME/videos/"
 TMP="$HOME/tmp/"
-IMAGE="fginet/encoding:latest"
+IMAGE="fginet/docker-video-encoding:v1"
 
 RESULTS="$HOME/WEBDAV/results/"
 JOBS="$HOME/WEBDAV/jobs/"
