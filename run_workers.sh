@@ -5,7 +5,7 @@ CORES=`grep -c ^processor /proc/cpuinfo`
 
 VIDEOS="$HOME/videos/"
 TMP="$HOME/tmp/"
-IMAGE="fginet/docker-video-encoding:v1"
+IMAGE="fginet/docker-video-encoding:latest"
 
 RESULTS="$HOME/WEBDAV/results/"
 JOBS="$HOME/WEBDAV/jobs/"
@@ -17,6 +17,9 @@ JOBS="$HOME/docker-video-encoding/samples/jobs/"
 
 echo Host: $HOST
 echo Cores: $CORES
+
+# Update docker image
+docker pull $IMAGE
 
 for (( c=1; c<$CORES; c++ ))
 do
