@@ -86,7 +86,7 @@ class DirJobs(object):
 
         log.debug("Job failed: %s" % job)
         
-        dst = pjoin(self._jobsdir, "99_failed", "%d.%s" % (int(time.time()), job.name()))
+        dst = pjoin(self._jobsdir, "99_failed", job.name())
        
         self._move(job.path(), dst)
         
