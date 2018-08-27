@@ -60,12 +60,12 @@ The following options are used:
 
 First build the image:
 
-	sudo docker build -t fginet/encoding:latest .
+	sudo docker build -t fginet/docker-video-encoding:latest .
 
 You can start and enter the build image with:
 
 ```
-sudo docker run --rm -it --entrypoint=bash fginet/encoding:latest
+sudo docker run --rm -it --entrypoint=bash fginet/docker-video-encoding:latest
 ```
 
 If you want to test encoding, also add the videos/ and results/ volumes:
