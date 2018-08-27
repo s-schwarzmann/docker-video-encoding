@@ -24,7 +24,7 @@ Encode the example with fixed segment durations:
 ```
 sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
                      -v "$PWD"/samples/results/:/results \
-                     fginet/encoding:latest bigbuckbunny480p24x30s 41 0 0 4 x264
+                     fginet/docker-video-encoding:v1 bigbuckbunny480p24x30s 41 0 0 4 x264
 
 ```
 
@@ -73,6 +73,6 @@ If you want to test encoding, also add the videos/ and results/ volumes:
 ```
 sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
                      -v "$PWD"/samples/results/:/results \ 
-                     -it --entrypoint=bash fginet/encoding:latest
+                     -it --entrypoint=bash fginet/docker-video-encoding:v1
 ```
 
