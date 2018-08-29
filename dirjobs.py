@@ -74,11 +74,11 @@ class DirJobs(object):
         self._job_filter = job_filter
         self._cur_job = None
 
-            # Sanity check for worker ID
+        # Sanity check for worker ID
         if not re.match('^[a-zA-Z0-9]+$', self._wid):
                 raise Exception("Worker ID is only allowed to contain numbers and letters.")
 
-            # Make sure job directories exist.
+        # Make sure job directories exist.
         for d in ["00_waiting", "01_running", "02_done", "99_failed"]:
             os.makedirs(pjoin(self._jobsdir, d), exist_ok=True)
 

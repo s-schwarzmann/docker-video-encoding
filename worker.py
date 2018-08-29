@@ -54,7 +54,7 @@ def process_job(job, wargs, dryrun=False):
                           j["video"], j["crf"], j["min_length"],
                           j["max_length"], j["target_seg_length"],
                           j["encoder"],
-                  dryrun=dryrun, processor=wargs['processor'])
+                          dryrun=dryrun, processor=wargs['processor'])
 
         dur = time.perf_counter() - t
         stats['container_runtime'] = dur
@@ -75,12 +75,45 @@ def process_job(job, wargs, dryrun=False):
     return ret
 
 
+def _docker_pull(resultdir, container, dryrun=False):
+
+    log.info("Checking for newer version of %s" % container)
+
+    cmd = ["docker", "pull", container]
+
+    log.debug("RUN: %s" % " ".join(cmd))
+
+    if not dryrun:
+
+        try:
+            with open(pjoin(resultdir, "docker_pull_stdout.txt"), "wt") as fout, \
+                 open(pjoin(resultdir, "docker_pull_stderr.txt"), "wt") as ferr:
+
+                subprocess.check_call(cmd, stderr=ferr, stdout=fout)
+
+        except subprocess.CalledProcessError:
+            log.error("Docker pull failed !!")
+            log.error("Check the logs in %s for details." % resultdir)
+            return False
+    else:
+        log.warning("Dryrun selected. Not pulling docker container!")
+
+    return True
+
+
 def _docker_run(stats, tmpdir, viddir, resultdir, container,
                 video_id, crf_value, key_int_min, key_int_max, target_seg_length, encoder,
-                dryrun=False, processor=None):
+                dryrun=False, processor=None, skip_pull=False):
+
+    if not skip_pull:
+
+        ret = _docker_pull(resultdir, container, dryrun=dryrun)
+
+        if not ret:
+            return False
 
     docker_opts = ["--rm",
-                   "--user" , "%d:%d" % (os.geteuid(), os.getegid()),
+                   "--user", "%d:%d" % (os.geteuid(), os.getegid()),
                    "-v", "%s:/videos" % os.path.abspath(viddir),
                    "-v", "%s:/tmpdir" % os.path.abspath(tmpdir),
                    "-v", "%s:/results" % os.path.abspath(resultdir)]
@@ -101,9 +134,7 @@ def _docker_run(stats, tmpdir, viddir, resultdir, container,
             with open(pjoin(resultdir, "docker_run_stdout.txt"), "wt") as fout, \
                  open(pjoin(resultdir, "docker_run_stderr.txt"), "wt") as ferr:
 
-                ret = subprocess.check_call(cmd, stderr=ferr, stdout=fout)
-
-                print(ret)
+                subprocess.check_call(cmd, stderr=ferr, stdout=fout)
 
         except subprocess.CalledProcessError:
             log.error("Docker run failed !!")
@@ -116,6 +147,7 @@ def _docker_run(stats, tmpdir, viddir, resultdir, container,
     stats['docker_cmd'] = " ".join(cmd)
 
     return True
+
 
 def worker_loop(args):
 
@@ -141,7 +173,7 @@ def worker_loop(args):
 
     # Worker arguments
     fields = ['tmpdir', 'viddir', 'resultdir', 'container', 'id', 'processor']
-    wargs =  {k: getattr(args, k) for k in fields}
+    wargs = {k: getattr(args, k) for k in fields}
 
     while running:
 
@@ -182,7 +214,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--viddir', help="Video folder.", default="samples/videos")
     parser.add_argument('-t', '--tmpdir', help="Temporary folder.", default="samples/tmpdir")
     parser.add_argument('-r', '--resultdir', help="Results folder.", default="samples/results")
-    parser.add_argument('-c', '--container', help="Container to use.", default="fginet/docker-video-encoding:v1")
+    parser.add_argument('-c', '--container', help="Container to use.", default="fginet/docker-video-encoding:latest")
     parser.add_argument('--one-job', help="Run only one job and quit.", action="store_true")
     parser.add_argument('--dry-run', help="Dry-run. Do not run docker.", action="store_true")
     parser.add_argument('-i', '--id', help="Worker identifier.", default="w1")
