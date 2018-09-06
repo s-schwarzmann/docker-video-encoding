@@ -15,6 +15,61 @@ from dirjobs import DirJobs
 log = logging.getLogger(__name__)
 
 
+def sftp_upload_tmp(host, port, username, password, local_dir, target_dir):
+    """
+    Upload a folder to sftp server.
+
+    :param host:
+    :param port:
+    :param username:
+    :param password:
+    :param local_dir:
+    :param target_dir:
+    :return:
+    """
+
+    import paramiko
+
+    log.debug("SFTP CPY: %s to %s@%s:%d:%s" %
+              (local_dir, username, host, port, target_dir))
+
+    try:
+        t = paramiko.Transport((host, port))
+
+        t.connect(username=username, password=password)
+
+        sftp = paramiko.SFTPClient.from_transport(t)
+    except:
+        log.error("SFTP Connection failed!")
+        log.error(traceback.format_exc())
+        return False
+
+    # Local directory name
+    ldirname = os.path.basename(os.path.normpath(local_dir))
+
+    try:
+        sftp.chdir(target_dir)
+        sftp.mkdir(ldirname)
+        sftp.chdir(target_dir + "/" + ldirname)
+    except:
+        log.error("Could not create %s !" % (target_dir + "/" + ldirname))
+        log.error(traceback.format_exc())
+        return False
+
+    try:
+        for item in os.listdir(local_dir):
+            itemabs = os.path.join(local_dir, item)
+            if os.path.isfile(itemabs):
+                log.debug("SFTP PUT: %s" % item)
+                sftp.put(itemabs, item)
+    except:
+        log.error("Failed to put items on the sftp server!")
+        log.error(traceback.format_exc())
+        return False
+
+    return True
+
+
 def process_job(job, wargs, dryrun=False):
     """
     Processes a job with the docker container.
@@ -69,8 +124,18 @@ def process_job(job, wargs, dryrun=False):
     with open(pjoin(rdir, "stats.json"), "w") as f:
         json.dump(stats, f, indent=4, sort_keys=True)
 
-    log.debug("Deleting %s" % tdir)
-    shutil.rmtree(tdir)
+    # If SFTP upload is specified.
+    if wargs.sftp_host:
+        sftp_ret = sftp_upload_tmp(wargs.sftp_host, wargs.sftp_port,
+                                   wargs.sftp_user, wargs.sftp_password,
+                                   tdir, wargs.sftp_target_dir)
+
+    if not wargs.keep_tmp:
+        if sftp_ret:
+            log.debug("Deleting %s." % tdir)
+            shutil.rmtree(tdir)
+        elif sftp_ret:
+            log.error("SFTP Upload of %s failed ! Keeping it locally.")
 
     return ret
 
@@ -172,7 +237,8 @@ def worker_loop(args):
     running = True
 
     # Worker arguments
-    fields = ['tmpdir', 'viddir', 'resultdir', 'container', 'id', 'processor']
+    fields = ['tmpdir', 'viddir', 'resultdir', 'container', 'id', 'processor', 'keep_tmp',
+              'sftp_host', 'sftp_user', 'sftp_port', 'sftp_password', 'sftp_target_dir']
     wargs = {k: getattr(args, k) for k in fields}
 
     while running:
@@ -215,8 +281,14 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--tmpdir', help="Temporary folder.", default="samples/tmpdir")
     parser.add_argument('-r', '--resultdir', help="Results folder.", default="samples/results")
     parser.add_argument('-c', '--container', help="Container to use.", default="fginet/docker-video-encoding:latest")
+    parser.add_argument('--sftp-host', help="SFTP Host to upload encoded videos to.")
+    parser.add_argument('--sftp-port', help="Port of SFTP host.", default=22)
+    parser.add_argument('--sftp-user', help="User of SFTP host.")
+    parser.add_argument('--sftp-password', help="Password of the SFTP host.")
+    parser.add_argument('--sftp-target-dir', help="Target directory on the SFTP host.", default=".")
     parser.add_argument('--one-job', help="Run only one job and quit.", action="store_true")
     parser.add_argument('--dry-run', help="Dry-run. Do not run docker.", action="store_true")
+    parser.add_argument('--keep-tmp', help="Keep encoded files in tmp folder.", action="store_true")
     parser.add_argument('-i', '--id', help="Worker identifier.", default="w1")
     parser.add_argument('-p', '--processor', help="Which CPU to use.", default=None)
 
