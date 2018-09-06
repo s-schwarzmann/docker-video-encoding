@@ -50,7 +50,7 @@ def sftp_upload_tmp(host, port, username, password, local_dir, target_dir):
     try:
         sftp.chdir(target_dir)
         sftp.mkdir(ldirname)
-        sftp.chdir(target_dir + "/" + ldirname)
+        sftp.chdir(ldirname)
     except:
         log.error("Could not create %s !" % (target_dir + "/" + ldirname))
         log.error(traceback.format_exc())
@@ -126,9 +126,16 @@ def process_job(job, wargs, dryrun=False):
 
     # If SFTP upload is specified.
     if wargs.sftp_host:
+
+        t = time.perf_counter()
+
         sftp_ret = sftp_upload_tmp(wargs.sftp_host, wargs.sftp_port,
                                    wargs.sftp_user, wargs.sftp_password,
                                    tdir, wargs.sftp_target_dir)
+
+        dur = time.perf_counter() - t
+
+        log.debug("Upload took %.1fs." % dur)
 
     if not wargs.keep_tmp:
         if sftp_ret:

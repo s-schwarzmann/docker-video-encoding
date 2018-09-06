@@ -50,6 +50,7 @@ class Job(object):
         """
         return "%s.%s" % (self._dj._wid, self._job)
 
+
 class DirJobs(object):
 
     def __init__(self, jobsdir, wid="w1", rnd_job=True, job_ext=".txt",
