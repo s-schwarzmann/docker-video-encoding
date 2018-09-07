@@ -29,12 +29,12 @@ def sftp_upload_tmp(host, port, username, password, local_dir, target_dir):
     """
 
     log.debug("SFTP CPY: %s to %s@%s:%d:%s" %
-              (local_dir, username, host, port, target_dir))
+              (local_dir, username, host, int(port), target_dir))
 
     import paramiko
 
     try:
-        t = paramiko.Transport((host, port))
+        t = paramiko.Transport((host, int(port)))
 
         t.connect(username=username, password=password)
 
@@ -84,7 +84,7 @@ def process_job(job, wargs, dryrun=False):
              'job': job.name(),
              'job.path': job.path()}
 
-    stats.update(wargs)
+    stats.update({k: v for k, v in wargs.items() if k != 'sftp_password'})
 
     log.info("Processing %s" % job)
 
