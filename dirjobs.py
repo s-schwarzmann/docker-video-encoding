@@ -162,9 +162,8 @@ class DirJobs(object):
 
     def _job_worker_selection(self, job, no_wait=False):
 
-        log.debug("Waiting %ds if someone else wants this job.." % self._sync_time)
-
         if not no_wait:
+            log.debug("Waiting %ds if someone else wants this job.." % self._sync_time)
             time.sleep(self._sync_time)
 
         job_workers = [j.split(".")[0] for j in os.listdir(pjoin(self._jobsdir, "01_running")) if job in j]
