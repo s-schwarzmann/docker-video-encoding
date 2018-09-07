@@ -125,24 +125,26 @@ def process_job(job, wargs, dryrun=False):
         json.dump(stats, f, indent=4, sort_keys=True)
 
     # If SFTP upload is specified.
-    if wargs.sftp_host:
+    if wargs['sftp_host'] and not dryrun:
 
         t = time.perf_counter()
 
-        sftp_ret = sftp_upload_tmp(wargs.sftp_host, wargs.sftp_port,
-                                   wargs.sftp_user, wargs.sftp_password,
-                                   tdir, wargs.sftp_target_dir)
+        sftp_ret = sftp_upload_tmp(wargs['sftp_host'], wargs['sftp_port'],
+                                   wargs['sftp_user'], wargs['sftp_password'],
+                                   tdir, wargs['sftp_target_dir'])
 
         dur = time.perf_counter() - t
 
         log.debug("Upload took %.1fs." % dur)
 
-    if not wargs.keep_tmp:
-        if sftp_ret:
+        if sftp_ret and not wargs['keep_tmp']:
             log.debug("Deleting %s." % tdir)
             shutil.rmtree(tdir)
         elif sftp_ret:
             log.error("SFTP Upload of %s failed ! Keeping it locally.")
+
+    if not wargs['keep_tmp'] and not dryrun:
+        shutil.rmtree(tdir)
 
     return ret
 
@@ -251,7 +253,7 @@ def worker_loop(args):
     while running:
 
         try:
-            job = dj.next_and_lock()
+            job = dj.next_and_lock(no_wait=args.one_job)
 
             if job:
                 ret = process_job(job, wargs, dryrun=args.dry_run)
