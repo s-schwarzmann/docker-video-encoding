@@ -54,6 +54,7 @@ def sftp_upload_tmp(host, port, username, password, local_dir, target_dir):
     except:
         log.error("Could not create %s !" % (target_dir + "/" + ldirname))
         log.error(traceback.format_exc())
+        sftp.close()
         return False
 
     try:
@@ -65,7 +66,10 @@ def sftp_upload_tmp(host, port, username, password, local_dir, target_dir):
     except:
         log.error("Failed to put items on the sftp server!")
         log.error(traceback.format_exc())
+        sftp.close()
         return False
+
+    sftp.close()
 
     return True
 
@@ -140,12 +144,13 @@ def process_job(job, wargs, dryrun=False):
         log.debug("Upload took %.1fs." % dur)
 
         if sftp_ret and not wargs['keep_tmp']:
-            log.debug("Deleting %s." % tdir)
+            log.debug("SFTP upload completed. Deleting local %s." % tdir)
             shutil.rmtree(tdir)
-        elif sftp_ret:
+        elif not sftp_ret:
             log.error("SFTP Upload of %s failed ! Keeping it locally.")
 
-    if not wargs['keep_tmp'] and not dryrun:
+    if not wargs['sftp_host'] and not wargs['keep_tmp'] and not dryrun:
+        log.debug("Deleting %s." % tdir)
         shutil.rmtree(tdir)
 
     return ret
