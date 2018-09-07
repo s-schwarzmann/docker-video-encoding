@@ -28,10 +28,10 @@ def sftp_upload_tmp(host, port, username, password, local_dir, target_dir):
     :return:
     """
 
-    import paramiko
-
     log.debug("SFTP CPY: %s to %s@%s:%d:%s" %
               (local_dir, username, host, port, target_dir))
+
+    import paramiko
 
     try:
         t = paramiko.Transport((host, port))
@@ -252,6 +252,16 @@ def worker_loop(args):
               'sftp_host', 'sftp_user', 'sftp_port', 'sftp_password', 'sftp_target_dir']
     wargs = {k: getattr(args, k) for k in fields}
 
+    if wargs['sftp_host'] and not args.dry_run:
+
+        log.info("Using SFTP upload to %s." % wargs['sftp_host'])
+
+        try:
+            import paramiko
+        except ImportError:
+            log.critical("Python module paramiko not installed !!!")
+            return
+
     while running:
 
         try:
@@ -300,6 +310,7 @@ if __name__ == "__main__":
     parser.add_argument('--one-job', help="Run only one job and quit.", action="store_true")
     parser.add_argument('--dry-run', help="Dry-run. Do not run docker.", action="store_true")
     parser.add_argument('--keep-tmp', help="Keep encoded files in tmp folder.", action="store_true")
+    parser.add_argument('--log', help="Create a worker log in the home folder.", action="store_true")
     parser.add_argument('-i', '--id', help="Worker identifier.", default="w1")
     parser.add_argument('-p', '--processor', help="Which CPU to use.", default=None)
 
@@ -325,6 +336,12 @@ if __name__ == "__main__":
     if not os.path.exists(jpath):
         log.critical("Path with the waiting jobs %s has to exist!" % jpath)
         sys.exit(-1)
+
+    # Create a log file for the worker in the current directory.
+    if args.log:
+        fh = logging.FileHandler("worker_%s.log" % args.id)
+        fh.setFormatter(logging.Formatter(logconf['format']))
+        logging.getLogger().addHandler(fh)
 
     if args.dry_run:
         log.warning("This is a DRY-RUN. I am not running docker.")
