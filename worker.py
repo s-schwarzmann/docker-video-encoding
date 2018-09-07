@@ -125,7 +125,7 @@ def process_job(job, wargs, dryrun=False):
         log.critical("Failed to process job!")
         return False
 
-    stats['tmpsize'] = sum(os.path.getsize(f) for f in os.listdir(tdir) if os.path.isfile(pjoin(tdir, f)))
+    stats['tmpsize'] = sum(os.path.getsize(pjoin(tdir, f)) for f in os.listdir(tdir) if os.path.isfile(pjoin(tdir, f)))
 
     with open(pjoin(rdir, "stats.json"), "w") as f:
         json.dump(stats, f, indent=4, sort_keys=True)
