@@ -14,6 +14,8 @@ from dirjobs import DirJobs
 
 log = logging.getLogger(__name__)
 
+VID_EXTS = ['y4m', 'yuv']
+
 
 def sftp_upload_tmp(host, port, username, password, local_dir, target_dir):
     """
@@ -204,8 +206,13 @@ def _docker_run(stats, tmpdir, viddir, resultdir, container,
 
     docker_opts += [container]
 
+    videos = [video_id + "." + e for e in VID_EXTS if os.path.exists(pjoin(viddir, video_id + "." + e))]
+
+    # There has to be at least one video with the name
+    assert(len(videos) > 0)
+
     cmd = ["docker", "run"] + docker_opts + \
-          [video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seg_length), encoder]
+          [videos[0], str(crf_value), str(key_int_min), str(key_int_max), str(target_seg_length), encoder]
 
     log.debug("RUN: %s" % " ".join(cmd))
 
@@ -242,7 +249,7 @@ def worker_loop(args):
         vid = name.split('_')[0]
 
         # Check if it exists
-        return os.path.exists(pjoin(viddir, vid + ".y4m"))
+        return any([os.path.exists(pjoin(viddir, vid + "." + e)) for e in VID_EXTS])
 
     dj = DirJobs(args.jobdir,
                  wid=args.id,
