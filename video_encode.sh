@@ -13,7 +13,7 @@ if [ "$#" -ne 6 ]; then
 fi
 
 steady_id=$1
-vid_id=/videos/$1.y4m
+vid_id=/videos/$1
 crf_val=$2
 min_dur=$3
 max_dur=$4 
