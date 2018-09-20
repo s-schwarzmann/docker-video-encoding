@@ -123,7 +123,7 @@ def process_job(job, wargs, dryrun=False):
         log.info("Container runtime: %.1fs" % dur)
 
     except:
-        print(traceback.format_exc())
+        log.critical(traceback.format_exc())
         log.critical("Failed to process job!")
         return False
 
