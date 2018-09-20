@@ -242,7 +242,8 @@ def worker_loop(args):
         vid = name.split('_')[0]
 
         # Check if it exists
-        return os.path.exists(pjoin(viddir, vid + ".y4m"))
+        return os.path.exists(pjoin(viddir, vid + ".y4m")) or os.path.exists(pjoin(viddir, vid + ".mov")) or os.path.exists(pjoin(viddir, vid + ".mkv")) or os.path.exists(pjoin(viddir, vid + ".avi"))
+
 
     dj = DirJobs(args.jobdir,
                  wid=args.id,
