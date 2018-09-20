@@ -4,8 +4,8 @@
 
 
 #list of videos
-declare -a id1="BigBuckBunny.avi"
-declare -a id2="BigBuckBunny4000x2250"
+declare -a id1="Meridian3840x2160,.mkv"
+declare -a id2="Meridian3840x2160,"
 
 
 #list all crf values
@@ -18,6 +18,7 @@ declare -a max_durs=(4 \
 6 \
 8 \
 10)
+
 
 
 for c in "${crfs[@]}"

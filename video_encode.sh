@@ -80,7 +80,7 @@ else
 	#min_dur=$target_seg_length
 	#max_dur=$target_seg_length
 	#encode the video in case of fixed length
-	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -f stream_segment -segment_time $max_dur -force_key_frames "expr:gte(t,n_forced*$max_dur)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2
+	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -"$codec"-params keyint="$key_int_max":min-keyint="$key_int_min" -f stream_segment -segment_time $max_dur -force_key_frames "expr:gte(t,n_forced*$max_dur)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2
 	
 
 fi
