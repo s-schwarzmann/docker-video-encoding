@@ -50,6 +50,7 @@ class Job(object):
         """
         return "%s.%s" % (self._dj._wid, self._job)
 
+
 class DirJobs(object):
 
     def __init__(self, jobsdir, wid="w1", rnd_job=True, job_ext=".txt",
@@ -74,11 +75,11 @@ class DirJobs(object):
         self._job_filter = job_filter
         self._cur_job = None
 
-            # Sanity check for worker ID
+        # Sanity check for worker ID
         if not re.match('^[a-zA-Z0-9]+$', self._wid):
                 raise Exception("Worker ID is only allowed to contain numbers and letters.")
 
-            # Make sure job directories exist.
+        # Make sure job directories exist.
         for d in ["00_waiting", "01_running", "02_done", "99_failed"]:
             os.makedirs(pjoin(self._jobsdir, d), exist_ok=True)
 
@@ -102,7 +103,7 @@ class DirJobs(object):
         
         self._cur_job = None
 
-    def next_and_lock(self):
+    def next_and_lock(self, no_wait=False):
         """
         Get the next job to process and locks it for the worker.
         """
@@ -142,7 +143,7 @@ class DirJobs(object):
                 return Job(self, "01_running", job)
             else:
 
-                job = self._job_worker_selection(job)
+                job = self._job_worker_selection(job, no_wait=no_wait)
 
                 if job is not None:
                     return job
@@ -159,11 +160,11 @@ class DirJobs(object):
         
         return jobs
 
-    def _job_worker_selection(self, job):
+    def _job_worker_selection(self, job, no_wait=False):
 
-        log.debug("Waiting %ds if someone else wants this job.." % self._sync_time)
-
-        time.sleep(self._sync_time)
+        if not no_wait:
+            log.debug("Waiting %ds if someone else wants this job.." % self._sync_time)
+            time.sleep(self._sync_time)
 
         job_workers = [j.split(".")[0] for j in os.listdir(pjoin(self._jobsdir, "01_running")) if job in j]
 

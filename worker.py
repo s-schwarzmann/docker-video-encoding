@@ -15,6 +15,65 @@ from dirjobs import DirJobs
 log = logging.getLogger(__name__)
 
 
+def sftp_upload_tmp(host, port, username, password, local_dir, target_dir):
+    """
+    Upload a folder to sftp server.
+
+    :param host:
+    :param port:
+    :param username:
+    :param password:
+    :param local_dir:
+    :param target_dir:
+    :return:
+    """
+
+    log.debug("SFTP CPY: %s to %s@%s:%d:%s" %
+              (local_dir, username, host, int(port), target_dir))
+
+    import paramiko
+
+    try:
+        t = paramiko.Transport((host, int(port)))
+
+        t.connect(username=username, password=password)
+
+        sftp = paramiko.SFTPClient.from_transport(t)
+    except:
+        log.error("SFTP Connection failed!")
+        log.error(traceback.format_exc())
+        return False
+
+    # Local directory name
+    ldirname = os.path.basename(os.path.normpath(local_dir))
+
+    try:
+        sftp.chdir(target_dir)
+        sftp.mkdir(ldirname)
+        sftp.chdir(ldirname)
+    except:
+        log.error("Could not create %s !" % (target_dir + "/" + ldirname))
+        log.error(traceback.format_exc())
+        sftp.close()
+        return False
+
+    try:
+        for item in os.listdir(local_dir):
+            itemabs = os.path.join(local_dir, item)
+            if os.path.isfile(itemabs):
+                log.debug("SFTP PUT: %s" % item)
+                sftp.put(itemabs, item)
+    except:
+        log.error("Failed to put items on the sftp server!")
+        log.error(traceback.format_exc())
+        sftp.close()
+        return False
+
+    sftp.close()
+
+    return True
+
+
 def process_job(job, wargs, dryrun=False):
     """
     Processes a job with the docker container.
@@ -29,7 +88,7 @@ def process_job(job, wargs, dryrun=False):
              'job': job.name(),
              'job.path': job.path()}
 
-    stats.update(wargs)
+    stats.update({k: v for k, v in wargs.items() if k != 'sftp_password'})
 
     log.info("Processing %s" % job)
 
@@ -54,7 +113,7 @@ def process_job(job, wargs, dryrun=False):
                           j["video"], j["crf"], j["min_length"],
                           j["max_length"], j["target_seg_length"],
                           j["encoder"],
-                  dryrun=dryrun, processor=wargs['processor'])
+                          dryrun=dryrun, processor=wargs['processor'])
 
         dur = time.perf_counter() - t
         stats['container_runtime'] = dur
@@ -66,21 +125,76 @@ def process_job(job, wargs, dryrun=False):
         log.critical("Failed to process job!")
         return False
 
+    stats['tmpsize'] = sum(os.path.getsize(pjoin(tdir, f)) for f in os.listdir(tdir) if os.path.isfile(pjoin(tdir, f)))
+
     with open(pjoin(rdir, "stats.json"), "w") as f:
         json.dump(stats, f, indent=4, sort_keys=True)
 
-    log.debug("Deleting %s" % tdir)
-    shutil.rmtree(tdir)
+    # If SFTP upload is specified.
+    if wargs['sftp_host'] and not dryrun:
+
+        t = time.perf_counter()
+
+        sftp_ret = sftp_upload_tmp(wargs['sftp_host'], wargs['sftp_port'],
+                                   wargs['sftp_user'], wargs['sftp_password'],
+                                   tdir, wargs['sftp_target_dir'])
+
+        dur = time.perf_counter() - t
+
+        log.debug("Upload took %.1fs." % dur)
+
+        if sftp_ret and not wargs['keep_tmp']:
+            log.debug("SFTP upload completed. Deleting local %s." % tdir)
+            shutil.rmtree(tdir)
+        elif not sftp_ret:
+            log.error("SFTP Upload of %s failed ! Keeping it locally.")
+
+    if not wargs['sftp_host'] and not wargs['keep_tmp'] and not dryrun:
+        log.debug("Deleting %s." % tdir)
+        shutil.rmtree(tdir)
 
     return ret
 
 
+def _docker_pull(resultdir, container, dryrun=False):
+
+    log.info("Checking for newer version of %s" % container)
+
+    cmd = ["docker", "pull", container]
+
+    log.debug("RUN: %s" % " ".join(cmd))
+
+    if not dryrun:
+
+        try:
+            with open(pjoin(resultdir, "docker_pull_stdout.txt"), "wt") as fout, \
+                 open(pjoin(resultdir, "docker_pull_stderr.txt"), "wt") as ferr:
+
+                subprocess.check_call(cmd, stderr=ferr, stdout=fout)
+
+        except subprocess.CalledProcessError:
+            log.error("Docker pull failed !!")
+            log.error("Check the logs in %s for details." % resultdir)
+            return False
+    else:
+        log.warning("Dryrun selected. Not pulling docker container!")
+
+    return True
+
+
 def _docker_run(stats, tmpdir, viddir, resultdir, container,
                 video_id, crf_value, key_int_min, key_int_max, target_seg_length, encoder,
-                dryrun=False, processor=None):
+                dryrun=False, processor=None, skip_pull=False):
+
+    if not skip_pull:
+
+        ret = _docker_pull(resultdir, container, dryrun=dryrun)
+
+        if not ret:
+            return False
 
     docker_opts = ["--rm",
-                   "--user" , "%d:%d" % (os.geteuid(), os.getegid()),
+                   "--user", "%d:%d" % (os.geteuid(), os.getegid()),
                    "-v", "%s:/videos" % os.path.abspath(viddir),
                    "-v", "%s:/tmpdir" % os.path.abspath(tmpdir),
                    "-v", "%s:/results" % os.path.abspath(resultdir)]
@@ -101,9 +215,7 @@ def _docker_run(stats, tmpdir, viddir, resultdir, container,
             with open(pjoin(resultdir, "docker_run_stdout.txt"), "wt") as fout, \
                  open(pjoin(resultdir, "docker_run_stderr.txt"), "wt") as ferr:
 
-                ret = subprocess.check_call(cmd, stderr=ferr, stdout=fout)
-
-                print(ret)
+                subprocess.check_call(cmd, stderr=ferr, stdout=fout)
 
         except subprocess.CalledProcessError:
             log.error("Docker run failed !!")
@@ -116,6 +228,7 @@ def _docker_run(stats, tmpdir, viddir, resultdir, container,
     stats['docker_cmd'] = " ".join(cmd)
 
     return True
+
 
 def worker_loop(args):
 
@@ -140,13 +253,24 @@ def worker_loop(args):
     running = True
 
     # Worker arguments
-    fields = ['tmpdir', 'viddir', 'resultdir', 'container', 'id', 'processor']
-    wargs =  {k: getattr(args, k) for k in fields}
+    fields = ['tmpdir', 'viddir', 'resultdir', 'container', 'id', 'processor', 'keep_tmp',
+              'sftp_host', 'sftp_user', 'sftp_port', 'sftp_password', 'sftp_target_dir']
+    wargs = {k: getattr(args, k) for k in fields}
+
+    if wargs['sftp_host'] and not args.dry_run:
+
+        log.info("Using SFTP upload to %s." % wargs['sftp_host'])
+
+        try:
+            import paramiko
+        except ImportError:
+            log.critical("Python module paramiko not installed !!!")
+            return
 
     while running:
 
         try:
-            job = dj.next_and_lock()
+            job = dj.next_and_lock(no_wait=args.one_job)
 
             if job:
                 ret = process_job(job, wargs, dryrun=args.dry_run)
@@ -182,9 +306,16 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--viddir', help="Video folder.", default="samples/videos")
     parser.add_argument('-t', '--tmpdir', help="Temporary folder.", default="samples/tmpdir")
     parser.add_argument('-r', '--resultdir', help="Results folder.", default="samples/results")
-    parser.add_argument('-c', '--container', help="Container to use.", default="fginet/docker-video-encoding:v1")
+    parser.add_argument('-c', '--container', help="Container to use.", default="fginet/docker-video-encoding:latest")
+    parser.add_argument('--sftp-host', help="SFTP Host to upload encoded videos to.")
+    parser.add_argument('--sftp-port', help="Port of SFTP host.", default=22)
+    parser.add_argument('--sftp-user', help="User of SFTP host.")
+    parser.add_argument('--sftp-password', help="Password of the SFTP host.")
+    parser.add_argument('--sftp-target-dir', help="Target directory on the SFTP host.", default=".")
     parser.add_argument('--one-job', help="Run only one job and quit.", action="store_true")
     parser.add_argument('--dry-run', help="Dry-run. Do not run docker.", action="store_true")
+    parser.add_argument('--keep-tmp', help="Keep encoded files in tmp folder.", action="store_true")
+    parser.add_argument('--log', help="Create a worker log in the home folder.", action="store_true")
     parser.add_argument('-i', '--id', help="Worker identifier.", default="w1")
     parser.add_argument('-p', '--processor', help="Which CPU to use.", default=None)
 
@@ -210,6 +341,12 @@ if __name__ == "__main__":
     if not os.path.exists(jpath):
         log.critical("Path with the waiting jobs %s has to exist!" % jpath)
         sys.exit(-1)
+
+    # Create a log file for the worker in the current directory.
+    if args.log:
+        fh = logging.FileHandler("worker_%s.log" % args.id)
+        fh.setFormatter(logging.Formatter(logconf['format']))
+        logging.getLogger().addHandler(fh)
 
     if args.dry_run:
         log.warning("This is a DRY-RUN. I am not running docker.")
