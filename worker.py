@@ -123,7 +123,7 @@ def process_job(job, wargs, dryrun=False):
         log.info("Container runtime: %.1fs" % dur)
 
     except:
-        print(traceback.format_exc())
+        log.critical(traceback.format_exc())
         log.critical("Failed to process job!")
         return False
 
@@ -206,13 +206,11 @@ def _docker_run(stats, tmpdir, viddir, resultdir, container,
 
     docker_opts += [container]
 
-    videos = [video_id + "." + e for e in VID_EXTS if os.path.exists(pjoin(viddir, video_id + "." + e))]
-
-    # There has to be at least one video with the name
-    assert(len(videos) > 0)
+    if not os.path.exists(pjoin(viddir, video_id)):
+        raise Exception("Could not find video %s !!" % video_id)
 
     cmd = ["docker", "run"] + docker_opts + \
-          [videos[0], str(crf_value), str(key_int_min), str(key_int_max), str(target_seg_length), encoder]
+          [video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seg_length), encoder]
 
     log.debug("RUN: %s" % " ".join(cmd))
 
