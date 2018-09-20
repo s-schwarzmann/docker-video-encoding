@@ -14,7 +14,7 @@ from dirjobs import DirJobs
 
 log = logging.getLogger(__name__)
 
-VID_EXTS = ['y4m', 'yuv']
+VID_EXTS = ['y4m', 'yuv', 'mov', 'mkv', 'avi']
 
 
 def sftp_upload_tmp(host, port, username, password, local_dir, target_dir):

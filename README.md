@@ -24,7 +24,7 @@ Encode the example with fixed segment durations:
 ```
 sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
                      -v "$PWD"/samples/results/:/results \
-                     fginet/docker-video-encoding:latest bigbuckbunny480p24x30s 41 0 0 4 x264
+                     fginet/docker-video-encoding:latest bigbuckbunny480p24x30s.y4m 41 0 0 4 x264
 
 ```
 
