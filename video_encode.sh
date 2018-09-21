@@ -45,15 +45,21 @@ TS=$(date +%s)
 dur=$(ffprobe -i $vid_id -show_entries format=duration -v quiet | grep duration | awk '{ print $1} ' | tr -d duration=)
 #frames per second
 fps=$(ffmpeg -i $vid_id 2>&1 | sed -n "s/.*, \(.*\) fp.*/\1/p")
-fps=$(python -c "from math import ceil; print ceil($fps)")
+#fps=$(python -c "from math import ceil; print ceil($fps)")
 resolution=$(ffmpeg -i $vid_id 2>&1 | grep -oP 'Stream .*, \K[0-9]+x[0-9]+')
 #bitrate of raw video
 tmp_bitrate=$(ffmpeg -i $vid_id 2>&1 | grep bitrate | sed 's/.*bitrate=\([0-9]\+\).*/\1/g')
 bitrate=$(echo $tmp_bitrate | awk {' print $6 '})
 
 #Segment size in frames (depends on duration and fps)
-key_int_max=$(echo $fps*$max_dur | bc)
-key_int_min=$(echo $fps*$min_dur | bc)
+key_int_max_t=$(echo $fps*$max_dur | bc)
+key_int_min_t=$(echo $fps*$min_dur | bc)
+
+key_int_max_t=$(python -c "from math import ceil; print ceil($key_int_max_t)")
+
+key_int_max="${key_int_max_t//.0}"
+
+
 
 
 SINCE=$(( $(date +%s) - $TS ))
