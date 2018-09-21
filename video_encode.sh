@@ -35,6 +35,8 @@ RESULTS="/results"
 TMP="/tmpdir"
 TIMINGS="timings.csv.txt"
 
+mkdir $TMP
+
 echo $vid_id
 
 echo "### Collecting general metrics ###"
@@ -45,9 +47,10 @@ TS=$(date +%s)
 dur=$(ffprobe -i $vid_id -show_entries format=duration -v quiet | grep duration | awk '{ print $1} ' | tr -d duration=)
 #frames per second
 fps=$(ffmpeg -i $vid_id 2>&1 | sed -n "s/.*, \(.*\) fp.*/\1/p")
-if [ "$fps" = "1k" ]; then
+if [ "$fps" == "1k" ]; then
 	fps=1000
 fi
+
 
 #fps=$(python -c "from math import ceil; print ceil($fps)")
 resolution=$(ffmpeg -i $vid_id 2>&1 | grep -oP 'Stream .*, \K[0-9]+x[0-9]+')
