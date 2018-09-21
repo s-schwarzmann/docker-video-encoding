@@ -4,8 +4,8 @@
 
 
 #list of videos
-declare -a id1="Meridian3840x2160,.mkv"
-declare -a id2="Meridian3840x2160,"
+declare -a id1="BigBuckBunny4000x2250.avi"
+declare -a id2="BigBuckBunny4000x2250"
 
 
 #list all crf values
@@ -26,12 +26,12 @@ do
 	for md in "${max_durs[@]}"
 	do
 			encoder="x264"
-			file_id="$id2"_"$c"-"$md"-"$encoder"-"var"
-			printf "{\"video\": \"$id1\", \n \"crf\": $c, \n \"min_length\": 0, \n \"max_length\": $md, \n \"target_seg_length\": \"var\", \n \"encoder\": \"$encoder\"}"> jobs_2/"$file_id".txt 
+			file_id="$id2"_"$c"-"$md"-"$encoder"-"fix"
+			printf "{\"video\": \"$id1\", \n \"crf\": $c, \n \"min_length\": 0, \n \"max_length\": $md, \n \"target_seg_length\": \"fix\", \n \"encoder\": \"$encoder\"}"> jobs_2/"$file_id".txt 
 
 			encoder="x265"
-			file_id="$id2"_"$c"-"$md"-"$encoder"-"var"
-			printf "{\"video\": \"$id1\", \n \"crf\": $c, \n \"min_length\": 0, \n \"max_length\": $md, \n \"target_seg_length\": \"var\", \n \"encoder\": \"$encoder\"}"> jobs_2/"$file_id".txt 			
+			file_id="$id2"_"$c"-"$md"-"$encoder"-"fix"
+			printf "{\"video\": \"$id1\", \n \"crf\": $c, \n \"min_length\": 0, \n \"max_length\": $md, \n \"target_seg_length\": \"fix\", \n \"encoder\": \"$encoder\"}"> jobs_2/"$file_id".txt 			
 		
 	done
 done
