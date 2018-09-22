@@ -35,7 +35,6 @@ RESULTS="/results"
 TMP="/tmpdir"
 TIMINGS="timings.csv.txt"
 
-mkdir $TMP
 
 echo $vid_id
 
