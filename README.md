@@ -56,6 +56,22 @@ The following options are used:
   * *--dry-run*: does not call the container, but prints the docker command.
   * *--one-job*: quit after processing one job.
 
+### run_workers.sh Script
+
+Use the *run_workers.sh* script to start a worker on each available core:
+
+```
+cp run_workers_template.sh run_workers.sh
+```
+
+Adapt the paths and parameters in the script and remove the *echo* from *echo screen* in the script to activate the workers when you execute the script.
+
+You can stop all running workers after the current job with creating a *STOP_WORKERS* file in the working directory:
+
+```
+touch STOP_WORKERS
+```
+
 ## Local Testing
 
 First build the image:
