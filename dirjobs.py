@@ -198,6 +198,7 @@ class DirJobs(object):
     def _move(self, src, dst):
         log.debug("MOVE: %s to %s" % (src, dst))
         shutil.move(src, dst)
+        os.utime(dst)
 
 if __name__ == "__main__":
     
