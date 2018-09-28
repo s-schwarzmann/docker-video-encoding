@@ -35,6 +35,7 @@ RESULTS="/results"
 TMP="/tmpdir"
 TIMINGS="timings.csv.txt"
 
+
 echo $vid_id
 
 echo "### Collecting general metrics ###"
@@ -45,15 +46,26 @@ TS=$(date +%s)
 dur=$(ffprobe -i $vid_id -show_entries format=duration -v quiet | grep duration | awk '{ print $1} ' | tr -d duration=)
 #frames per second
 fps=$(ffmpeg -i $vid_id 2>&1 | sed -n "s/.*, \(.*\) fp.*/\1/p")
-fps=$(python -c "from math import ceil; print ceil($fps)")
+if [ "$fps" == "1k" ]; then
+	fps=1000
+fi
+
+
+#fps=$(python -c "from math import ceil; print ceil($fps)")
 resolution=$(ffmpeg -i $vid_id 2>&1 | grep -oP 'Stream .*, \K[0-9]+x[0-9]+')
 #bitrate of raw video
 tmp_bitrate=$(ffmpeg -i $vid_id 2>&1 | grep bitrate | sed 's/.*bitrate=\([0-9]\+\).*/\1/g')
 bitrate=$(echo $tmp_bitrate | awk {' print $6 '})
 
 #Segment size in frames (depends on duration and fps)
-key_int_max=$(echo $fps*$max_dur | bc)
+key_int_max_t=$(echo $fps*$max_dur | bc)
 key_int_min=$(echo $fps*$min_dur | bc)
+
+key_int_max_t=$(python -c "from math import ceil; print ceil($key_int_max_t)")
+
+key_int_max="${key_int_max_t//.0}"
+
+
 
 
 SINCE=$(( $(date +%s) - $TS ))
@@ -73,16 +85,15 @@ echo "### Encoding video (prev. took ${SINCE}s) ###"
 if [[ $target_seg_length == "var" ]]; then
 
 	#encode the video in case of variable
-	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -"$codec"-params keyint="$key_int_max":min-keyint="$key_int_min" -f stream_segment -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2
+	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -"$codec"-params "keyint=$key_int_max:min-keyint=$key_int_min" -f stream_segment -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts 
 	
 
 else
 	#min_dur=$target_seg_length
 	#max_dur=$target_seg_length
 	#encode the video in case of fixed length
-	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -f stream_segment -segment_time $max_dur -force_key_frames "expr:gte(t,n_forced*$max_dur)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2
+	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -"$codec"-params "keyint=$key_int_max:min-keyint=$key_int_max" -f stream_segment -segment_time $max_dur -force_key_frames "expr:gte(t,n_forced*$max_dur)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts 
 	
-
 fi
 
 SINCE=$(( $(date +%s) - $TS ))

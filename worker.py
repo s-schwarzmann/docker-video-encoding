@@ -274,6 +274,10 @@ def worker_loop(args):
 
     while running:
 
+        if os.path.exists("STOP_WORKERS"):
+            log.warning("File STOP_WORKERS exists in working directory. Quitting..")
+            break
+
         try:
             job = dj.next_and_lock(no_wait=args.one_job)
 
