@@ -123,7 +123,7 @@ echo "\"getBitrates\",${SINCE}" >> $TIMINGS
 echo "### Computing quality metrics (prev. took ${SINCE}s) ###"
 
 #compute SSIM, m_ssim, psnr, vmaf
-ffmpeg -nostats -i $TMP/out.m3u8 -i $vid_id -lavfi libvmaf="log_path=quality_metrics.txt:psnr=1:ssim=1:ms_ssim=1" -f null -
+ffmpeg -nostats -i $TMP/out.m3u8 -i $vid_id -lavfi libvmaf="model_path=/usr/local/share/model/vmaf_4k_rb_v0.6.2/vmaf_4k_rb_v0.6.2.pkl:log_path=quality_metrics.txt:psnr=1:ssim=1:ms_ssim=1:enable_conf_interval=1" -f null -
 
 
 SINCE=$(( $(date +%s) - $TS ))

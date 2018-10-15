@@ -1,15 +1,15 @@
 #!/bin/bash
 
-#unzip ffmpeg folder 
-unzip ffmpeg.zip
+set -e
 
-wget https://github.com/Netflix/vmaf/archive/v1.3.4.tar.gz
-tar -xf v1.3.4.tar.gz
-cd vmaf-1.3.4
+wget -O vmaf-1.3.9.tar.gz https://github.com/Netflix/vmaf/archive/v1.3.9.tar.gz
+tar -xf vmaf-1.3.9.tar.gz
+cd vmaf-1.3.9
 
 cd ptools; make; cd ../wrapper; make; cd ..;
 make install
-
+cd ..
+rm -f vmaf-1.3.9.tar.gz
 
 # Bash script to install latest version of ffmpeg and its dependencies on Ubuntu 16.04
 # Inspired from https://gist.github.com/faleev/3435377
@@ -29,6 +29,7 @@ mkdir ffmpeg_sources
 # Install Yasm:
 # An assembler for x86 optimizations used by x264 and FFmpeg. Highly recommended or your resulting build may be very slow.
 cd ffmpeg_sources
+
 wget http://www.tortall.net/projects/yasm/releases/yasm-1.3.0.tar.gz
 tar xzvf yasm-1.3.0.tar.gz
 cd yasm-1.3.0
@@ -56,26 +57,20 @@ cd x264-snapshot*
 PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" --enable-static --disable-opencl
 PATH="$HOME/bin:$PATH" make
 make install
-checkinstall --pkgname=x264 --pkgversion="3:$(./version.sh | \
-  awk -F'[" ]' '/POINT/{print $4"+git"$5}')" --backup=no --deldoc=yes \
-    --fstrans=no --default
 cd ..
 
 # Install libx265-dev:
-apt-get install libx265-dev
-#Otherwise you can compile:
 
-#apt-get install cmake mercurial
-#hg clone https://bitbucket.org/multicoreware/x265
-#cd x265/build/linux
-#PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DENABLE_SHARED:bool=off ../../source
-#make
-#make install
-
-#cd ../../..
+apt install -y cmake mercurial
+hg clone https://bitbucket.org/multicoreware/x265
+cd x265/build/linux
+PATH="$HOME/bin:$PATH" cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DENABLE_SHARED:bool=off ../../source
+make
+make install
+cd ../../..
 
 # Install libfdk-aac AAC audio decoder
-apt install libfdk-aac-dev
+apt install -y libfdk-aac-dev
 wget -O fdk-aac.tar.gz https://github.com/mstorsjo/fdk-aac/tarball/master
 tar xzvf fdk-aac.tar.gz
 cd mstorsjo-fdk-aac*
@@ -87,7 +82,7 @@ make install
 cd ..
 
 # Install libmp3lame MP3 audio encoder .
-apt install libmp3lame-dev
+apt install -y libmp3lame-dev
 wget http://downloads.sourceforge.net/project/lame/lame/3.99/lame-3.99.5.tar.gz
 tar xzvf lame-3.99.5.tar.gz
 cd lame-3.99.5
@@ -98,7 +93,7 @@ make install
 cd ..
 
 # Install libopus opus audio decoder and encoder.
-apt install libopus-dev
+apt install -y libopus-dev
 
 wget https://archive.mozilla.org/pub/opus/opus-1.1.5.tar.gz
 tar xzvf opus-1.1.5.tar.gz
@@ -109,7 +104,7 @@ make install
 cd ..
 
 # Install libvpx VP8/VP9 video encoder and decoder.
-apt install libvpx-dev
+apt install -y libvpx-dev
 git clone --depth 1 https://chromium.googlesource.com/webm/libvpx.git
 cd libvpx
 PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --disable-examples --disable-unit-tests
@@ -149,15 +144,16 @@ cd ..
 #  --deldoc=yes --fstrans=no --default install -Dm755 tools/qt-faststart \
 #  /usr/local/bin/qt-faststart
 
-wget http://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
-tar xjvf ffmpeg-snapshot.tar.bz2
-cd ffmpeg
+wget http://ffmpeg.org/releases/ffmpeg-4.0.2.tar.bz2
+tar xjvf ffmpeg-4.0.2.tar.bz2
+cd ffmpeg-4.0.2
 PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
   --prefix="$HOME/ffmpeg_build" \
   --pkg-config-flags="--static" \
   --extra-cflags="-I$HOME/ffmpeg_build/include" \
   --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
   --bindir="$HOME/bin" \
+  --extra-libs=-lpthread \
   --enable-gpl \
   --enable-libass \
   --enable-libfdk-aac \
@@ -172,9 +168,16 @@ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./conf
   --enable-nonfree \
   --enable-version3 \
   --enable-libvmaf
-PATH="$HOME/bin:$PATH" make
+PATH="$HOME/bin:$PATH" make -j 4
 make install
-hash -r
 
 export PATH="$HOME/bin:$PATH"
 echo "PATH=\"$HOME/bin:$PATH\"" > ~/.bashrc
+
+hash -r
+
+# testing
+ffmpeg -f lavfi -i testsrc -f lavfi -i testsrc \
+       -t 0.1 \
+       -lavfi libvmaf="model_path=/usr/local/share/model/vmaf_4k_rb_v0.6.2/vmaf_4k_rb_v0.6.2.pkl:log_path=quality_metrics.txt:psnr=1:ssim=1:ms_ssim=1:enable_conf_interval=1" \
+       -f null -
