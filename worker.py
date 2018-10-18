@@ -112,9 +112,9 @@ def process_job(job, wargs, dryrun=False):
         t = time.perf_counter()
 
         ret = _docker_run(stats, tdir, wargs['viddir'], rdir, wargs['container'],
-                          j["video"], j["crf"], j["min_length"],
+                          j["video"], j["bitrate"], j["min_length"],
                           j["max_length"], j["target_seg_length"],
-                          j["encoder"],
+                          j["encoder"],j["file"],
                           dryrun=dryrun, processor=wargs['processor'])
 
         dur = time.perf_counter() - t

@@ -1,6 +1,6 @@
 FROM ubuntu:16.04
 
-MAINTAINER Stefan Geissler<stefan.geissler@informatik.uni-wuerzburg.de>, Susanna Schwarzmann<susanna.schwarzmann@informatik.uni-wuerzburg.de>
+MAINTAINER Christian Sieber<c.sieber@tum.de>, Susanna Schwarzmann<susanna.schwarzmann@inet.tu-berlin.de>
 
 # Install dependencies
 RUN apt update && \
@@ -32,6 +32,7 @@ ENV PATH="/tools/ffmpeg:${PATH}"
 
 # Add the (relevant) git content
 COPY scripts/ /tools/scripts
+COPY files/ /tools/files
 COPY video_encode.sh /tools/
 
 # Fix permissions

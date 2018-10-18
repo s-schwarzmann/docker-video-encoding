@@ -7,18 +7,27 @@ err_trap() {
 
 trap 'err_trap' ERR
 
-if [ "$#" -ne 6 ]; then
+if [ "$#" -ne 7 ]; then
     echo "Usage: video_encode.sh <video_id> <crf_value> <key_int_min> <key_int_max> <target_seg_length> <codec>"
     exit -1
 fi
 
 steady_id=$1
 vid_id=/videos/$1
-crf_val=$2
+target_bitrate=$2
 min_dur=$3
 max_dur=$4 
 target_seg_length=$5
 codec=$6
+split_times_file=$7
+
+echo $split_times_file
+
+echo "new version2"
+echo "before split_times"
+split_times=$(<files/"$split_times_file")
+echo $split_times
+echo "after split_times"
 
 if [ ! -f "$vid_id" ]; then
     echo "Video file $vid_id not found!"
@@ -27,7 +36,7 @@ fi
 
 TS_START=$(date +%s)
 
-encoding_id=$steady_id\_$codec\_$crf_val\_$min_dur\_$max_dur\_$target_seg_length
+encoding_id=$steady_id\_$codec\_$target_bitrate\_$min_dur\_$max_dur\_$target_seg_length\_"cbr"
 
 # Store the segments in the temporary folder
 
@@ -85,14 +94,21 @@ echo "### Encoding video (prev. took ${SINCE}s) ###"
 if [[ $target_seg_length == "var" ]]; then
 
 	#encode the video in case of variable
-	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -"$codec"-params "keyint=$key_int_max:min-keyint=$key_int_min" -f stream_segment -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts 
+	echo "first pass start"																				
+	ffmpeg -threads 1 -i $vid_id -b:v $target_bitrate -vcodec lib"$codec" -pass 1 -f null - 2> /dev/null > /dev/null &&
+	echo "first pass end"			
+	echo "ffmpeg -threads 1 -i $vid_id -b:v $target_bitrate -vcodec lib"$codec" -f stream_segment -stream_segments $split_times -segment_list $sub_dir/out.m3u8  $sub_dir/out_%03d.ts -pass 2 > /dev/null 2> /dev/null"
+	ffmpeg -threads 1 -i $vid_id -b:v $target_bitrate -vcodec lib"$codec" -f stream_segment -stream_segments $split_times -segment_list $sub_dir/out.m3u8  $sub_dir/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
+																																												
+	#ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -"$codec"-params "keyint=$key_int_max:min-keyint=$key_int_min" -f stream_segment -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts 
 	
 
 else
 	#min_dur=$target_seg_length
 	#max_dur=$target_seg_length
 	#encode the video in case of fixed length
-	ffmpeg -nostats -threads 1 -i $vid_id -crf $crf_val -vcodec lib"$codec" -"$codec"-params "keyint=$key_int_max:min-keyint=$key_int_max" -f stream_segment -segment_time $max_dur -force_key_frames "expr:gte(t,n_forced*$max_dur)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts 
+	ffmpeg -threads 1 -i $vid_id -b:v $target_bitrate -vcodec lib"$codec" -pass 1 -f null - 2> /dev/null > /dev/null &&
+	ffmpeg -threads 1 -i $vid_id -b:v $target_bitrate -vcodec lib"$codec" -f stream_segment -segment_time $max_dur -force_key_frames "expr:gte(t,n_forced*$max_dur)" -segment_list $TMP/out.m3u8  $TMP/out_%03d.ts -pass 2 > /dev/null 2> /dev/null
 	
 fi
 
