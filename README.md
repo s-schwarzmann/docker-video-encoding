@@ -38,6 +38,8 @@ You can find the results in the *samples/results* folder.
 
 ## QUICKSTART (with worker and job queue)
 
+**Important**: Make sure that docker is configured to work without root access.
+
 First make sure you downloaded the video as described about (*bigbuckbunny480p24x30s.y4m*).
 Afterwards make a copy of the job template:
 

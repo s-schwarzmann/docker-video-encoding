@@ -185,7 +185,8 @@ class DirJobs(object):
                 else:
                     log.info("I am index %d, giving up on the job" % me_idx)
 
-                    self._rm(pjoin(self._jobsdir, "01_running", job))
+                    wjob = "%s.%s" % (self._wid, job)
+                    self._rm(pjoin(self._jobsdir, "01_running", wjob))
 
                     self._cur_job = None
                 
@@ -198,6 +199,7 @@ class DirJobs(object):
     def _move(self, src, dst):
         log.debug("MOVE: %s to %s" % (src, dst))
         shutil.move(src, dst)
+        os.utime(dst)
 
 if __name__ == "__main__":
     
