@@ -90,7 +90,7 @@ If you want to test encoding, also add the videos/ and results/ volumes:
 
 ```
 sudo docker run --rm -v "$PWD"/samples/videos/:/videos \
-                     -v "$PWD"/samples/results/:/results \ 
+                     -v "$PWD"/samples/results/:/results \
                      -it --entrypoint=bash fginet/docker-video-encoding:latest
 ```
 
