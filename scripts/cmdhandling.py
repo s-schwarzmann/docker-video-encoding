@@ -15,6 +15,8 @@ def exec_cmd(cmd, output=True, timeout=0):
         if timeout != 0:
             time.sleep(timeout)
             kill_proc(proc)
+        if proc.returncode != 0:
+            sys.exit('Failed to execute {cmd}'.format(cmd=cmd))
         stdout = stderr = ''
     return proc, stdout, stderr
 
