@@ -122,7 +122,7 @@ def process_job(job, wargs, dryrun=False):
             cst_bitrate = None
             log.info("NO CST BITRATE GIVEN!")
         ret = _docker_run(stats, tdir, wargs['viddir'], rdir, wargs['container'],
-                          j["video"], j["bitrate"], j["min_length"],
+                          j["video"], j["crf"], j["min_length"],
                           j["max_length"], j["target_seg_length"],
                           j["encoder"], timestamps, cst_bitrate,
                           dryrun=dryrun, processor=wargs['processor'])
