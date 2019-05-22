@@ -96,14 +96,7 @@ def encode_video_var(vid_opts,vid_stats):
     if not 'cst_bitrate' in vid_opts:
         count = 0
         out_name = 'crf'
-        if len(vid_opts['crf_vals']) > 1:
-            for crf_val in vid_opts['crf_vals']:
-                out_name += '_{crf_val}'.format(crf_val=crf_val)
-                cmd += '-map 0:0 -crf:v:{count} {crf_val} ' \
-                        .format(count=count, crf_val=crf_val)
-                count += 1
-        else:
-            cmd += '-crf {crf_val} '.format(crf_val=vid_opts['crf_vals'][0])
+        cmd += '-crf {crf_val} '.format(crf_val=vid_opts['crf_val'])
     
     if 'cst_bitrate' in vid_opts:
         first_pass = '-pass {pass_nr} -b:v {cst_bitrate} '.format(\
@@ -170,7 +163,7 @@ def encode_video_fixed(vid_opts,vid_stats):
         return
     cmd += cmd_split
     cmd += '-crf {crf_val} '.format(\
-        crf_val=vid_opts['crf_vals'][0]\
+        crf_val=vid_opts['crf_val']\
     )
     cmd += ' {output}'.format(\
         output=vid_opts['output']\
@@ -190,7 +183,7 @@ def extract_vid_opts():
         exit()
     vid_opts['steady_id'] = str(sys.argv[1])
     vid_opts['vid_id'] = str('/videos/') + vid_opts['steady_id'] # vid_opts['steady_id']
-    vid_opts['crf_vals'] = json.loads(str(sys.argv[2]))
+    vid_opts['crf_val'] = int(str(sys.argv[2]))
     vid_opts['min_dur'] = float(sys.argv[3])
     vid_opts['max_dur'] = float(sys.argv[4])
     vid_opts['target_seg_length'] = float(sys.argv[5])
@@ -208,7 +201,7 @@ def extract_vid_opts():
     # TODO: Extract bitrate
     # vid_opts['const_bitrate'] = 0
 
-    out_name = 'crf_{crfs}'.format(crfs=json.dumps(vid_opts['crf_vals'])\
+    out_name = 'crf_{crf}'.format(crf=json.dumps(vid_opts['crf_val'])\
             .replace(',','_')\
             .replace(' ', '')\
             .replace('[', '')\
