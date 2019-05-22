@@ -9,25 +9,39 @@ import subprocess
 import numpy as np
 
 def calc_stats(framelist,fps, durations):
-    bitrates = []
+    bitrates_segs_avg = []
     bitrates_segs = []
     sizes = []
     framecount = 0
     for frames in framelist:
         framecount += len(frames)
-        bitrate, bitrates_seg, size = calc_avg_bitrate_filesize(frames,fps)
-        bitrates.append(bitrate)
+        bitrate_seg_avg, bitrates_seg, size = calc_avg_bitrate_filesize(frames,fps)
+        bitrates_segs_avg.append(bitrate_seg_avg)
         bitrates_segs.append(bitrates_seg.tolist())
         sizes.append(size)
-    bitrates = np.array(bitrates)
+    # get bitrates per frame
+    bitrates = np.concatenate(bitrates_segs, axis=0)
+
+    # get avg bitrates per segment
+    bitrates_segs_avg = np.array(bitrates_segs_avg)
+    
     sizes = np.array(sizes)
     durations = np.array(durations)
     ret_data = {
+        # on segment basis
+        'bitrates_segs_avg_mean': bitrates_segs_avg.mean(),
+        'bitrates_segs_avg_std' : bitrates_segs_avg.std(),
+        'bitrates_segs_avg_min' : min(bitrates_segs_avg),
+        'bitrates_segs_avg_max' : max(bitrates_segs_avg),
+        'bitrates_segs_avg' : bitrates_segs_avg.tolist(),
+
+        # on frame basis
         'bitrate_mean': bitrates.mean(),
         'bitrate_std' : bitrates.std(),
         'bitrate_min' : min(bitrates),
         'bitrate_max' : max(bitrates),
         'bitrates' : bitrates.tolist(),
+
         'bitrates_segs' : bitrates_segs,
         'size_total' : np.sum(sizes),
         'size_seg_mean' : sizes.mean(),
