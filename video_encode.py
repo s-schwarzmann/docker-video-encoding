@@ -44,6 +44,8 @@ def calc_get_stats(vid_opts, vid_stats):
         json.dump(stats, fp)
     with open(vid_opts['stats_clean'], 'w') as fp:
         json.dump(stats_clean, fp)
+    with open(vid_opts['segments'], 'w') as fp:
+        json.dump(segments, fp)
 
 def calc_ssim_psnr(vid_opts):
     cmd = '-nostats -threads 1 -i {vid_id} -lavfi \'ssim={ssim};[0:v][1:v]psnr={psnr}\' -f null - '.format(\
@@ -242,6 +244,7 @@ def extract_vid_opts():
     vid_opts['conf'] = '{RESULTS}/{out_name}'.format(RESULTS=RESULTS_DIR,out_name='vid_opts.json')
     vid_opts['vid_stats'] = '{RESULTS}/{out_name}'.format(RESULTS=RESULTS_DIR,out_name='vid_stats.json')
     vid_opts['times'] = '{RESULTS}/{out_name}'.format(RESULTS=RESULTS_DIR,out_name=TIMINGS)
+    vid_opts['segments'] = '{RESULTS}/{out_name}'.format(RESULTS=RESULTS_DIR,out_name='segments.json')
 
     return vid_opts
 
