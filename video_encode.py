@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os, sys, re
 import subprocess
@@ -47,13 +47,23 @@ def calc_get_stats(vid_opts, vid_stats):
     with open(vid_opts['segments'], 'w') as fp:
         json.dump(segments, fp)
 
-def calc_ssim_psnr(vid_opts):
-    cmd = '-nostats -threads 1 -i {vid_id} -lavfi \'ssim={ssim};[0:v][1:v]psnr={psnr}\' -f null - '.format(\
-        vid_id = vid_opts['vid_id'], \
-        ssim = vid_opts['ssim'], \
-        psnr = vid_opts['psnr'] \
-        )
-    run_ffmpeg_cmd(vid_opts['m3u8'],cmd)
+def calc_ssim_psnr_vmaf(vid_opts):
+    # 4k model ist used that is located under
+    # /usr/local/share/model/vmaf_4k_v0.6.1.pkl
+    # we write everything as csv
+    print('Calculating ssim, psnr and vmaf with vmaf_4k_v0.6.1.pkl')
+    cmd = 'ffmpeg_quality_metrics {mpd} {src} -m /usr/local/share/model/vmaf_4k_v0.6.1.pkl --enable-vmaf -of csv'.format(\
+        mpd=vid_opts['output'], \
+        src=vid_opts['vid_id'] \
+    )
+    print(cmd)
+    proc, stdout, stderr = exec_cmd(cmd, output=True)
+    if 'error' in stdout.lower() or 'error' in stderr.lower():
+        sys.exit('Failed to execute {cmd}'.format(cmd=cmd))
+    print('Writing ssim, psnr and vmaf to csv')
+    with open(vid_opts['psnr_ssim_vmaf'], 'w') as f:
+        f.write(stdout)
+    print('Finished ssim, psnr, vmaf')
     
 def extract_vid_stats(video):
     vid_stats = {}
@@ -239,8 +249,9 @@ def extract_vid_opts():
     
     vid_opts['stats'] = '{RESULTS}/{out_name}'.format(RESULTS=RESULTS_DIR,out_name='video_statistics.json')
     vid_opts['stats_clean'] = '{RESULTS}/{out_name}'.format(RESULTS=RESULTS_DIR,out_name='video_statistics_clean.json')
-    vid_opts['ssim'] = '{RESULTS}/ssim.log'.format(RESULTS=RESULTS_DIR)
-    vid_opts['psnr'] = '{RESULTS}/psnr.log'.format(RESULTS=RESULTS_DIR)
+    #vid_opts['ssim'] = '{RESULTS}/ssim.log'.format(RESULTS=RESULTS_DIR)
+    #vid_opts['psnr'] = '{RESULTS}/psnr.log'.format(RESULTS=RESULTS_DIR)
+    vid_opts['psnr_ssim_vmaf'] = '{RESULTS}/psnr_ssim_vmaf.csv'.format(RESULTS=RESULTS_DIR)
     vid_opts['conf'] = '{RESULTS}/{out_name}'.format(RESULTS=RESULTS_DIR,out_name='vid_opts.json')
     vid_opts['vid_stats'] = '{RESULTS}/{out_name}'.format(RESULTS=RESULTS_DIR,out_name='vid_stats.json')
     vid_opts['times'] = '{RESULTS}/{out_name}'.format(RESULTS=RESULTS_DIR,out_name=TIMINGS)
@@ -260,7 +271,7 @@ if __name__== "__main__":
     times['enc_time'] = time.time() - enc_start
     print('Calculate PSNR and SSIM')
     calc_ssim_psnr_start = time.time()
-    calc_ssim_psnr(vid_opts)
+    calc_ssim_psnr_vmaf(vid_opts)
     times['calc_ssim_psnr_time'] = time.time() - calc_ssim_psnr_start
     print('Calculate Statistics')
     calc_stats_start = time.time()
