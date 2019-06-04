@@ -107,17 +107,21 @@ def encode_video_var(vid_opts,vid_stats):
 
     if not 'cst_bitrate' in vid_opts:
         count = 0
-        out_name = 'crf'
+        out_name = 'f'
         cmd += '-crf {crf_val} '.format(crf_val=vid_opts['crf_val'])
     
     if 'cst_bitrate' in vid_opts:
-        first_pass = '-pass {pass_nr} -b:v {cst_bitrate} '.format(\
+        first_pass = '-pass {pass_nr} -b:v {cst_bitrate} -maxrate {maxrate} -bufsize {bufsize} '.format(\
             pass_nr=1,
-            cst_bitrate=vid_opts['cst_bitrate']\
+            cst_bitrate=vid_opts['cst_bitrate'], \
+            maxrate=1.25*float(vid_opts['cst_bitrate']),
+            bufsize=2*float(vid_opts['cst_bitrate']),
         )
-        second_pass = '-pass {pass_nr} -b:v {cst_bitrate} '.format(\
+        second_pass = '-pass {pass_nr} -b:v {cst_bitrate} -maxrate {maxrate} -bufsize {bufsize} '.format(\
             pass_nr=2,
-            cst_bitrate=vid_opts['cst_bitrate']\
+            cst_bitrate=vid_opts['cst_bitrate'], \
+            maxrate=1.25*float(vid_opts['cst_bitrate']),
+            bufsize=2*float(vid_opts['cst_bitrate']),
         )
         cmd_first = cmd + cmd_split + first_pass + ' -f null -'.format(\
             output = '/dev/null'
