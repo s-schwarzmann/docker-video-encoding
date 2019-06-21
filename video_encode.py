@@ -54,7 +54,7 @@ def calc_ssim_psnr_vmaf(vid_opts):
     print('Calculating ssim, psnr and vmaf with vmaf_4k_v0.6.1.pkl')
     cmd = 'ffmpeg_quality_metrics {mpd} {src} -m /usr/local/share/model/vmaf_4k_v0.6.1.pkl --enable-vmaf -of csv'.format(\
         mpd=vid_opts['output'], \
-        src=vid_opts['vid_id'] \
+        src=vid_opts['reference_video'] \
     )
     print(cmd)
     proc, stdout, stderr = exec_cmd(cmd, output=True)
@@ -199,20 +199,21 @@ def extract_vid_opts():
         exit()
     vid_opts['steady_id'] = str(sys.argv[1])
     vid_opts['vid_id'] = str('/videos/') + vid_opts['steady_id'] # vid_opts['steady_id']
-    vid_opts['crf_val'] = int(str(sys.argv[2]))
-    vid_opts['min_dur'] = float(sys.argv[3])
-    vid_opts['max_dur'] = float(sys.argv[4])
-    vid_opts['target_seg_length'] = float(sys.argv[5])
-    vid_opts['codec'] = str(sys.argv[6])
+    vid_opts['reference_video'] = str('/videos/') + str(sys.argv[2])
+    vid_opts['crf_val'] = int(str(sys.argv[3]))
+    vid_opts['min_dur'] = float(sys.argv[4])
+    vid_opts['max_dur'] = float(sys.argv[5])
+    vid_opts['target_seg_length'] = float(sys.argv[6])
+    vid_opts['codec'] = str(sys.argv[7])
 
-    if len(sys.argv) > 7:
+    if len(sys.argv) > 8:
         if vid_opts['target_seg_length'] == 0.0:
             # TODO: Keyfreames have always to be there ...
-            vid_opts['key_frames_t'] = str(sys.argv[7])
-            if len(sys.argv) > 8:
-                vid_opts['cst_bitrate'] = float(sys.argv[8])
+            vid_opts['key_frames_t'] = str(sys.argv[8])
+            if len(sys.argv) > 9:
+                vid_opts['cst_bitrate'] = float(sys.argv[9])
         else:
-            vid_opts['cst_bitrate'] = float(sys.argv[7])
+            vid_opts['cst_bitrate'] = float(sys.argv[8])
 
     # TODO: Extract bitrate
     # vid_opts['const_bitrate'] = 0

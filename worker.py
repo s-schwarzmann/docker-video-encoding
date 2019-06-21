@@ -122,7 +122,7 @@ def process_job(job, wargs, dryrun=False):
             cst_bitrate = None
             log.info("NO CST BITRATE GIVEN!")
         ret = _docker_run(stats, tdir, wargs['viddir'], rdir, wargs['container'],
-                          j["video"], j["crf"], j["min_length"],
+                          j["video"], j["reference_video"], j["crf"], j["min_length"],
                           j["max_length"], j["target_seg_length"],
                           j["encoder"], timestamps, cst_bitrate,
                           dryrun=dryrun, processor=wargs['processor'])
@@ -195,7 +195,7 @@ def _docker_pull(resultdir, container, dryrun=False):
 
 
 def _docker_run(stats, tmpdir, viddir, resultdir, container,
-                video_id, crf_value, key_int_min, key_int_max, target_seg_length, encoder, timestamps=None, cst_bitrate=None,
+                video_id, reference_video, crf_value, key_int_min, key_int_max, target_seg_length, encoder, timestamps=None, cst_bitrate=None,
                 dryrun=False, processor=None, skip_pull=False):
 
     if not skip_pull:
@@ -220,7 +220,7 @@ def _docker_run(stats, tmpdir, viddir, resultdir, container,
         raise Exception("Could not find video %s !!" % video_id)
 
     cmd = ["docker", "run"] + docker_opts + \
-          [video_id, str(crf_value), str(key_int_min), str(key_int_max), str(target_seg_length), encoder]
+          [video_id, reference_video,str(crf_value), str(key_int_min), str(key_int_max), str(target_seg_length), encoder]
     
     if timestamps != None:
         cmd.append(timestamps)

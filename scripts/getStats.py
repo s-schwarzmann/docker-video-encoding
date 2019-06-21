@@ -4,7 +4,7 @@
 This script allows to calculate the stats per segment from a m3u8 file.
 """
 
-import commands, os, sys, re, time, json
+import os, sys, re, time, json
 import subprocess
 import numpy as np
 
