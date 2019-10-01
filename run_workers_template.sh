@@ -15,6 +15,7 @@ SFTP_PASSWORD=""
 SFTP_HOST=""
 SFTP_PORT=""
 SFTP_TARGET_DIR=""
+SSHFS_DIR="test/"
 
 # Overwrite here for testing
 CORES=2
