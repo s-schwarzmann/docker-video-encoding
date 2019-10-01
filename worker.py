@@ -161,7 +161,12 @@ def process_job(job, wargs, dryrun=False):
         elif not sftp_ret:
             log.error("SFTP Upload of %s failed ! Keeping it locally.")
 
-    if not wargs['sftp_host'] and not wargs['keep_tmp'] and not dryrun:
+    # If sshfs folder is specified.
+    if wargs['sshfs_dir'] and not dryrun:
+        log.debug("SFTP upload completed. Deleting local %s." % tdir)
+        shutil.move(tdir, wargs['sshfs_dir'])
+
+    if not wargs['sshfs_dir'] and not wargs['sftp_host'] and not wargs['keep_tmp'] and not dryrun:
         log.debug("Deleting %s." % tdir)
         shutil.rmtree(tdir)
 
@@ -275,7 +280,7 @@ def worker_loop(args):
 
     # Worker arguments
     fields = ['tmpdir', 'viddir', 'resultdir', 'container', 'id', 'processor', 'keep_tmp',
-              'sftp_host', 'sftp_user', 'sftp_port', 'sftp_password', 'sftp_target_dir']
+              'sftp_host', 'sftp_user', 'sftp_port', 'sftp_password', 'sftp_target_dir', 'sshfs_dir']
     wargs = {k: getattr(args, k) for k in fields}
 
     if wargs['sftp_host'] and not args.dry_run:
@@ -332,11 +337,12 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--tmpdir', help="Temporary folder.", default="samples/tmpdir")
     parser.add_argument('-r', '--resultdir', help="Results folder.", default="samples/results")
     parser.add_argument('-c', '--container', help="Container to use.", default="fginet/docker-video-encoding:latest")
+    parser.add_argument('--sftp-target-dir', help="Target directory on the SFTP host.", default=".")
     parser.add_argument('--sftp-host', help="SFTP Host to upload encoded videos to.")
     parser.add_argument('--sftp-port', help="Port of SFTP host.", default=22)
     parser.add_argument('--sftp-user', help="User of SFTP host.")
     parser.add_argument('--sftp-password', help="Password of the SFTP host.")
-    parser.add_argument('--sftp-target-dir', help="Target directory on the SFTP host.", default=".")
+    parser.add_argument('--sshfs-dir', help="Target directory on ssh host.", default=".")
     parser.add_argument('--one-job', help="Run only one job and quit.", action="store_true")
     parser.add_argument('--dry-run', help="Dry-run. Do not run docker.", action="store_true")
     parser.add_argument('--keep-tmp', help="Keep encoded files in tmp folder.", action="store_true")
