@@ -52,7 +52,7 @@ def calc_ssim_psnr_vmaf(vid_opts):
     # /usr/local/share/model/vmaf_4k_v0.6.1.pkl
     # we write everything as csv
     print('Calculating ssim, psnr and vmaf with vmaf_4k_v0.6.1.pkl')
-    cmd = 'ffmpeg_quality_metrics {mpd} {src} -m /usr/local/share/model/vmaf_4k_v0.6.1.pkl --enable-vmaf -of csv'.format(\
+    cmd = 'ffmpeg_quality_metrics {mpd} {src} -of csv'.format(\
         mpd=vid_opts['output'], \
         src=vid_opts['reference_video'] \
     )
