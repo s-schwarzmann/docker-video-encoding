@@ -9,7 +9,7 @@ def exec_cmd(cmd, output=True, timeout=0):
         stdout = out[0].decode('utf-8')
         stderr = out[1].decode('utf-8')
         if proc.returncode != 0:
-            sys.exit('Failed to execute {cmd}'.format(cmd=cmd))
+            sys.exit('Failed to execute {cmd}, Stderr: {stderr}, Stdout: {stdout}'.format(cmd=cmd, stderr=stderr, stdout=stdout))
     else:
         proc = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
         if timeout != 0:
