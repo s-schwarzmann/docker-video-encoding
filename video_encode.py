@@ -59,9 +59,9 @@ def calc_ssim_psnr_vmaf(vid_opts):
     #mpd=vid_opts['output'], \
     print(cmd)
     proc, stdout, stderr = exec_cmd(cmd, output=True)
-    #if 'error' in stdout.lower() or 'error' in stderr.lower():
-    #    sys.exit('Failed to execute {cmd}'.format(cmd=cmd))
-    #print('Writing ssim, psnr and vmaf to csv')
+    if 'error' in stdout.lower() or 'error' in stderr.lower():
+        sys.exit('Failed to execute {cmd}'.format(cmd=cmd))
+    print('Writing ssim, psnr and vmaf to csv')
     with open(vid_opts['psnr_ssim_vmaf'], 'w') as f:
         f.write(stdout)
     print('Finished ssim, psnr, vmaf')
