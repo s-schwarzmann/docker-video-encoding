@@ -1,8 +1,9 @@
-# docker-video-encoding
 
 ## 03.04.2020 - New version available
 The Docker container has been extended. A newer version, including new features such as CBR encoding, can be found here: 
 https://github.com/fg-inet/docker-video-encoding
+
+# docker-video-encoding
 
 Docker container for DASH video encoding using FFMPEG. 
 The following parameters can be specified: 
